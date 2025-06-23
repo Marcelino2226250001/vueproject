@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Supply = require('../models/supply');
+const Supply = require('../models/Supply');
 
 // GET semua data supply
 router.get('/', async (req, res) => {
