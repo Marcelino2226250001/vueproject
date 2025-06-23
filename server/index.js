@@ -21,6 +21,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
+app.set('trust proxy', 1);
 // Session configuration dengan MongoDB store
 app.use(session({
   secret: process.env.SESSION_SECRET || 'inventaris-app-super-secret-key-2024-jakarta-indonesia-secure',
