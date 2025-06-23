@@ -12,7 +12,8 @@ import '@mdi/font/css/materialdesignicons.css'
 import 'vuetify/styles'
 
 const app = createApp(App)
-axios.defaults.baseURL = 'http://localhost:3000';
+//axios.defaults.baseURL = 'http://localhost:3000';
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 app.use(createPinia())
 app.use(router)
 app.use(vuetify)
