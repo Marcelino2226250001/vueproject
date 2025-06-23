@@ -57,33 +57,78 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Import routes
-const productRoutes = require('./routes/productRoutes');
-app.use('/api/products', productRoutes);
+// Import routes - COMMENT SATU PER SATU UNTUK DEBUG
+try {
+  const productRoutes = require('./routes/productRoutes');
+  app.use('/api/products', productRoutes);
+  console.log('✅ productRoutes loaded');
+} catch (err) {
+  console.error('❌ Error loading productRoutes:', err.message);
+}
 
-const userRoutes = require('./routes/userRoutes');
-app.use('/api/users', userRoutes);
+try {
+  const userRoutes = require('./routes/userRoutes');
+  app.use('/api/users', userRoutes);
+  console.log('✅ userRoutes loaded');
+} catch (err) {
+  console.error('❌ Error loading userRoutes:', err.message);
+}
 
-const penjualanRoutes = require('./routes/penjualanRoutes');
-app.use('/api/penjualan', penjualanRoutes);
+try {
+  const penjualanRoutes = require('./routes/penjualanRoutes');
+  app.use('/api/penjualan', penjualanRoutes);
+  console.log('✅ penjualanRoutes loaded');
+} catch (err) {
+  console.error('❌ Error loading penjualanRoutes:', err.message);
+}
 
-const logRoutes = require('./routes/logRoutes');
-app.use('/api/log', logRoutes);
+try {
+  const logRoutes = require('./routes/logRoutes');
+  app.use('/api/log', logRoutes);
+  console.log('✅ logRoutes loaded');
+} catch (err) {
+  console.error('❌ Error loading logRoutes:', err.message);
+}
 
-const pembelianRoutes = require('./routes/pembelianRoutes');
-app.use('/api/pembelian', pembelianRoutes);
+try {
+  const pembelianRoutes = require('./routes/pembelianRoutes');
+  app.use('/api/pembelian', pembelianRoutes);
+  console.log('✅ pembelianRoutes loaded');
+} catch (err) {
+  console.error('❌ Error loading pembelianRoutes:', err.message);
+}
 
-const penerimaanRoutes = require('./routes/penerimaanRoutes');
-app.use('/api/penerimaan', penerimaanRoutes);
+try {
+  const penerimaanRoutes = require('./routes/penerimaanRoutes');
+  app.use('/api/penerimaan', penerimaanRoutes);
+  console.log('✅ penerimaanRoutes loaded');
+} catch (err) {
+  console.error('❌ Error loading penerimaanRoutes:', err.message);
+}
 
-const supplyRoutes = require('./routes/supplyRoutes');
-app.use('/api/supply', supplyRoutes);
+try {
+  const supplyRoutes = require('./routes/supplyRoutes');
+  app.use('/api/supply', supplyRoutes);
+  console.log('✅ supplyRoutes loaded');
+} catch (err) {
+  console.error('❌ Error loading supplyRoutes:', err.message);
+}
 
-const pelangganRoutes = require('./routes/pelangganRoutes');
-app.use('/api/pelanggan', pelangganRoutes);
+try {
+  const pelangganRoutes = require('./routes/pelangganRoutes');
+  app.use('/api/pelanggan', pelangganRoutes);
+  console.log('✅ pelangganRoutes loaded');
+} catch (err) {
+  console.error('❌ Error loading pelangganRoutes:', err.message);
+}
 
-const dashboardRoutes = require('./routes/dashboardRoutes');
-app.use('/api/dashboard', dashboardRoutes);
+try {
+  const dashboardRoutes = require('./routes/dashboardRoutes');
+  app.use('/api/dashboard', dashboardRoutes);
+  console.log('✅ dashboardRoutes loaded');
+} catch (err) {
+  console.error('❌ Error loading dashboardRoutes:', err.message);
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {
