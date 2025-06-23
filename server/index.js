@@ -7,16 +7,16 @@ const MongoStore = require('connect-mongo');
 
 const app = express();
 
-// CORS configuration - hanya satu kali
+// CORS configuration - PERBAIKAN: hapus trailing slash dan tambah log
 app.use(cors({
   origin: [
     'http://localhost:5173', // Vite default port
     'http://localhost:8080', // Vue CLI default port  
     'http://localhost:3000', // alternative port
     'http://localhost:5183', // jika ada port lain
-    'https://vueproject-murex.vercel.app/' // tambahkan domain production Vercel
+    'https://vueproject-murex.vercel.app' // PERBAIKAN: hapus trailing slash
   ],
-  credentials: true, // penting untuk session cookies
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
@@ -28,16 +28,16 @@ app.use(session({
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGO_URI,
-    collectionName: 'sessions', // nama collection untuk sessions
-    ttl: 24 * 60 * 60, // TTL 24 jam dalam detik
-    autoRemove: 'native', // otomatis hapus expired sessions
-    touchAfter: 24 * 3600 // update session setiap 24 jam jika tidak ada perubahan
+    collectionName: 'sessions',
+    ttl: 24 * 60 * 60,
+    autoRemove: 'native',
+    touchAfter: 24 * 3600
   }),
   cookie: { 
-    secure: process.env.NODE_ENV === 'production', // true di production
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 jam dalam milliseconds
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // 'none' untuk cross-origin di production
+    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
   }
 }));
 
@@ -50,6 +50,25 @@ app.use((req, res, next) => {
   console.log('Session ID:', req.sessionID);
   console.log('Session user:', req.session?.user);
   next();
+});
+
+// TAMBAHAN: Root route untuk handle GET /
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Inventaris API Server is running!', 
+    timestamp: new Date(),
+    status: 'OK',
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy',
+    timestamp: new Date(),
+    uptime: process.uptime()
+  });
 });
 
 // Import routes
@@ -82,8 +101,34 @@ app.use('/api/dashboard', dashboardRoutes);
 
 // Connect MongoDB
 mongoose.connect(process.env.MONGO_URI, {
-}).then(() => console.log('MongoDB connected'))
-  .catch(err => console.error(err));
+}).then(() => {
+  console.log('MongoDB connected successfully');
+  console.log('Database:', process.env.MONGO_URI ? 'Connected to remote DB' : 'No DB URI provided');
+}).catch(err => {
+  console.error('MongoDB connection error:', err);
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+  });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({ 
+    error: 'Route not found',
+    path: req.originalUrl,
+    method: req.method
+  });
+});
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`CORS Origins configured for production: https://vueproject-murex.vercel.app`);
+});
