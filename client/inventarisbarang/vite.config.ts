@@ -1,31 +1,23 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import vueJsx from '@vitejs/plugin-vue-jsx'
 import vuetify from 'vite-plugin-vuetify'
-import path from 'path'
+import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
   plugins: [
     vue(),
-    vuetify({ autoImport: true })
+    vueJsx(),
+    vuetify({
+      autoImport: true,
+    }),
   ],
+  define: {
+    'process.env': {}
+  },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
-    }
-  },
-  optimizeDeps: {
-    include: ['vuetify']
-  },
-  server: {
-    fs: {
-      allow: ['..']
+      '@': fileURLToPath(new URL('./src', import.meta.url))
     },
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3000', // Ganti sesuai port backend kamu
-        changeOrigin: true,
-        rewrite: path => path.replace(/^\/api/, '/api')
-      }
-    }
-  }
+  },
 })
