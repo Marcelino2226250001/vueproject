@@ -154,7 +154,7 @@ export default {
   methods: {
     async fetchBarang() {
       try {
-        const res = await axios.get('http://localhost:3000/api/products');
+        const res = await axios.get('/api/products');
         this.barangList = res.data;
       } catch (err) {
         console.error('Gagal fetch barang:', err);
@@ -162,7 +162,7 @@ export default {
     },
    async fetchSupply() {
   try {
-    const res = await axios.get('http://localhost:3000/api/supply');
+    const res = await axios.get('/api/supply');
     this.supplyList = res.data.map(item => ({
       ...item,
       displayNama: `${item.nama_barang} (${item.kode_barang})`
@@ -219,7 +219,7 @@ const payload = {
 
 
       try {
-        await axios.post('http://localhost:3000/api/pembelian', payload);
+        await axios.post('/api/pembelian', payload);
         alert('Pembelian berhasil disimpan');
         this.resetForm();
       } catch (err) {

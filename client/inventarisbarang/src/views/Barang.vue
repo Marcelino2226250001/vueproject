@@ -148,9 +148,9 @@ export default {
 
       try {
         if (this.form._id) {
-          await axios.put(`http://localhost:3000/api/products/${this.form._id}`, payload);
+          await axios.put(`/api/products/${this.form._id}`, payload);
         } else {
-          await axios.post('http://localhost:3000/api/products', payload);
+          await axios.post('/api/products', payload);
         }
 
         this.resetForm();
@@ -163,7 +163,7 @@ export default {
     async hapusBarang(id) {
       if (confirm('Yakin ingin menghapus barang ini?')) {
         try {
-          await axios.delete(`http://localhost:3000/api/products/${id}`, {
+          await axios.delete(`/api/products/${id}`, {
             data: {
               oleh: this.loggedInUser?.username || 'admin'
             }

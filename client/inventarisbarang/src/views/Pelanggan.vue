@@ -79,15 +79,15 @@ export default {
   },
   methods: {
     async getPelanggan() {
-      const res = await axios.get('http://localhost:3000/api/pelanggan');
+      const res = await axios.get('/api/pelanggan');
       this.pelangganList = res.data;
     },
     simpanPelanggan() {
   const isEdit = !!this.pelanggan._id;
   const method = isEdit ? 'put' : 'post';
   const url = isEdit
-    ? `http://localhost:3000/api/pelanggan/${this.pelanggan._id}`
-    : 'http://localhost:3000/api/pelanggan';
+    ? `/api/pelanggan/${this.pelanggan._id}`
+    : '/api/pelanggan';
 
   const data = {
     ...this.pelanggan,
@@ -102,7 +102,7 @@ export default {
         : `Menambahkan pelanggan baru: ${this.pelanggan.nama}`;
 
       // Kirim log ke log aktivitas (optional, jika masih ingin tetap pakai frontend log juga)
-      axios.post('http://localhost:3000/api/log/aktivitas', {
+      axios.post('/api/log/aktivitas', {
         tanggal: new Date(),
         tipe: tipeLog,
         pengguna: this.loggedInUser?.username || 'admin',
@@ -128,14 +128,14 @@ export default {
    hapusPelanggan(id) {
   const pelanggan = this.pelangganList.find(p => p._id === id);
   if (confirm('Yakin ingin menghapus pelanggan ini?')) {
-    axios.delete(`http://localhost:3000/api/pelanggan/${id}`, {
+    axios.delete(`/api/pelanggan/${id}`, {
       data: {
         oleh: this.loggedInUser?.username || 'admin' // kirim ke backend
       }
     })
     .then(() => {
       // Kirim log frontend (optional)
-      axios.post('http://localhost:3000/api/log/aktivitas', {
+      axios.post('/api/log/aktivitas', {
         tanggal: new Date(),
         tipe: 'hapus',
         pengguna: this.loggedInUser?.username || 'admin',

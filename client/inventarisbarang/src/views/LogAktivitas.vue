@@ -179,7 +179,7 @@ export default {
   methods: {
     async fetchLogAktivitas() {
       try {
-        const res = await axios.get('http://localhost:3000/api/log');
+        const res = await axios.get('/api/log');
         this.logList = res.data;
       } catch (err) {
         console.error('Gagal mengambil log aktivitas:', err);
@@ -210,13 +210,13 @@ export default {
         const jumlahLogSebelum = this.logList.length;
 
         // Panggil API untuk hapus semua log
-        const response = await axios.delete('http://localhost:3000/api/log/hapus-semua');
+        const response = await axios.delete('/api/log/hapus-semua');
 
         console.log('✅ Response hapus semua log:', response.data);
 
         // Catat aktivitas penghapusan log (ironis tapi penting untuk audit)
         try {
-          await axios.post('http://localhost:3000/api/log/aktivitas', {
+          await axios.post('/api/log/aktivitas', {
             tanggal: new Date(),
             tipe: 'sistem',
             kode: 'SYSTEM',

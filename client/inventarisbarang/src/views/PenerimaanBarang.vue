@@ -66,7 +66,7 @@ export default {
     async fetchPembelian() {
       try {
         // Selalu fetch data terbaru dari server
-        const res = await axios.get('http://localhost:3000/api/pembelian/belum-diterima');
+        const res = await axios.get('/api/pembelian/belum-diterima');
         this.pembelianList = res.data;
 
         console.log('Data pembelian ter-update:', this.pembelianList.length, 'items');
@@ -119,11 +119,11 @@ export default {
           }))
         };
 
-        await axios.post('http://localhost:3000/api/penerimaan', payload);
+        await axios.post('/api/penerimaan', payload);
 
         // Log aktivitas untuk setiap item
         for (const item of this.pembelianDetail.items) {
-          await axios.post('http://localhost:3000/api/log/aktivitas', {
+          await axios.post('/api/log/aktivitas', {
             tanggal: new Date(),
             tipe: 'penerimaan',
             kode: item.kode,
@@ -164,7 +164,7 @@ export default {
         // Catat log pembatalan (jangan throw error jika gagal)
         for (const item of itemsToLog) {
           try {
-            await axios.post('http://localhost:3000/api/log/aktivitas', {
+            await axios.post('/api/log/aktivitas', {
               tanggal: new Date(),
               tipe: 'pembatalan',
               kode: item.kode,
@@ -180,7 +180,7 @@ export default {
         }
 
         // Hapus transaksi pembelian
-        await axios.delete(`http://localhost:3000/api/pembelian/${pembelianId}`);
+        await axios.delete(`/api/pembelian/${pembelianId}`);
         console.log('Berhasil hapus pembelian:', pembelianId);
 
         // Refresh data dari server

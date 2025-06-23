@@ -132,7 +132,7 @@ export default {
   },
   methods: {
     async fetchData() {
-      const res = await axios.get('http://localhost:3000/api/supply');
+      const res = await axios.get('/api/supply');
       this.list = res.data;
     },
   async simpanSupply() {
@@ -152,9 +152,9 @@ export default {
 
   try {
     if (this.form._id) {
-      await axios.put(`http://localhost:3000/api/supply/${this.form._id}`, this.form);
+      await axios.put(`/api/supply/${this.form._id}`, this.form);
     } else {
-      await axios.post('http://localhost:3000/api/supply', this.form);
+      await axios.post('/api/supply', this.form);
     }
 
     this.resetForm();
@@ -176,7 +176,7 @@ export default {
     async hapusSupply(id) {
       if (confirm('Yakin ingin menghapus data ini?')) {
         try {
-          await axios.delete(`http://localhost:3000/api/supply/${id}`);
+          await axios.delete(`/api/supply/${id}`);
           this.fetchData();
         } catch (err) {
           alert('Gagal menghapus data: ' + err.message);

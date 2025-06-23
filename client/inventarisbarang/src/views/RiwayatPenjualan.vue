@@ -131,7 +131,7 @@ export default {
   methods: {
     async fetchRiwayat() {
       try {
-        const res = await axios.get('http://localhost:3000/api/penjualan');
+        const res = await axios.get('/api/penjualan');
         this.riwayat = res.data;
       } catch (err) {
         console.error('Gagal fetch riwayat:', err);
@@ -240,7 +240,7 @@ export default {
       // Catat aktivitas cetak untuk setiap item
       try {
         for (const itemBarang of item.items) {
-          await axios.post('http://localhost:3000/api/log/aktivitas', {
+          await axios.post('/api/log/aktivitas', {
             tanggal: new Date(),
             tipe: 'penjualan',
             kode: itemBarang.kode || '',
@@ -260,12 +260,12 @@ export default {
           const transaksi = this.riwayat.find(item => item._id === id);
 
           // Hapus transaksi dari database
-          await axios.delete(`http://localhost:3000/api/penjualan/${id}`);
+          await axios.delete(`/api/penjualan/${id}`);
 
           // Catat aktivitas hapus untuk setiap item dalam transaksi
           if (transaksi && transaksi.items) {
             for (const item of transaksi.items) {
-              await axios.post('http://localhost:3000/api/log/aktivitas', {
+              await axios.post('/api/log/aktivitas', {
                 tanggal: new Date(),
                 tipe: 'penjualan',
                 kode: item.kode || '',

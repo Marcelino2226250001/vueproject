@@ -163,14 +163,14 @@ export default {
   methods: {
     async fetchBarang() {
       try {
-        const res = await axios.get('http://localhost:3000/api/products');
+        const res = await axios.get('/api/products');
         this.barangList = res.data;
       } catch (err) {
         console.error('Gagal mengambil data barang:', err);
       }
     },
     async fetchPelanggan() {
-    const res = await axios.get('http://localhost:3000/api/pelanggan');
+    const res = await axios.get('/api/pelanggan');
     this.pelangganList = res.data;
   },
   isiDataPelanggan() {
@@ -265,7 +265,7 @@ export default {
 
 
 
-    await axios.post('http://localhost:3000/api/penjualan', payload);
+    await axios.post('/api/penjualan', payload);
     alert('Transaksi berhasil disimpan!');
     this.resetForm();
   } catch (err) {

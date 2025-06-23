@@ -123,13 +123,13 @@ export default {
         const laporanSebelumHapus = [...this.laporan];
 
         // Hapus semua data pembelian
-        await axios.delete('http://localhost:3000/api/pembelian/semua');
+        await axios.delete('/api/pembelian/semua');
 
         // Catat aktivitas untuk setiap item yang dihapus
         for (const pembelian of laporanSebelumHapus) {
           if (pembelian.items && Array.isArray(pembelian.items)) {
             for (const item of pembelian.items) {
-              await axios.post('http://localhost:3000/api/log/aktivitas', {
+              await axios.post('/api/log/aktivitas', {
                 tanggal: new Date(),
                 tipe: 'pembelian',
                 kode: item.kode || '',

@@ -19,7 +19,7 @@ import roleAccess from '@/helpers/roleAccess';
 
 // Configure axios default settings
 axios.defaults.withCredentials = true;
-axios.defaults.baseURL = 'http://localhost:3000';
+
 
 // Add axios interceptors for better error handling
 axios.interceptors.response.use(

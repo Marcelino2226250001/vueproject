@@ -53,7 +53,7 @@ export default {
   methods: {
    async fetchBarang() {
   try {
-    const res = await axios.get('http://localhost:3000/api/products');
+    const res = await axios.get('/api/products');
 
     // ❗ Filter data yang kosong atau tidak valid
     this.barangList = res.data.filter(barang =>
