@@ -23,7 +23,7 @@ app.use(cors({
 
 // Session configuration dengan MongoDB store
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'inventaris-secret-key-2024',
+  secret: process.env.SESSION_SECRET || 'inventaris-app-super-secret-key-2024-jakarta-indonesia-secure',
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
