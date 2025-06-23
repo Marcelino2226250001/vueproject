@@ -125,7 +125,7 @@ export default {
   methods: {
     async fetchBarang() {
       try {
-        const res = await axios.get('http://localhost:3000/api/products');
+        const res = await axios.get('/api/products');
         this.barangList = res.data;
       } catch (err) {
         console.error('Gagal mengambil data:', err);
