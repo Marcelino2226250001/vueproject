@@ -14,7 +14,8 @@ app.use(cors({
     'http://localhost:8080', // Vue CLI default port  
     'http://localhost:3000', // alternative port
     'http://localhost:5183', // jika ada port lain
-    'https://vueproject-murex.vercel.app' // PERBAIKAN: hapus trailing slash
+    'https://vueproject-murex.vercel.app',
+    'https://vueproject-production.up.railway.app' 
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
