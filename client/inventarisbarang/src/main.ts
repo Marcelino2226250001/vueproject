@@ -14,7 +14,7 @@ import 'vuetify/styles'
 const app = createApp(App)
 
 //axios.defaults.baseURL = 'https://vueproject-production.up.railway.app';
-axios.defaults.baseURL = '/api';
+axios.defaults.baseURL = import.meta.env.VITE_API_URL;
 console.log('✅ BASE URL:', import.meta.env.VITE_API_URL);
 axios.defaults.withCredentials = true;
 app.use(createPinia())
