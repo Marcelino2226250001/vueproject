@@ -14,7 +14,7 @@ app.use(cors({
     'http://localhost:8080', // Vue CLI default port  
     'http://localhost:3000', // alternative port
     'http://localhost:5183', // jika ada port lain
-    'https://your-frontend-domain.vercel.app' // tambahkan domain production Vercel
+    'https://vueproject-eight.vercel.app/' // tambahkan domain production Vercel
   ],
   credentials: true, // penting untuk session cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
