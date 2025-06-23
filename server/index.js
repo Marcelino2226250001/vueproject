@@ -34,10 +34,10 @@ app.use(session({
     touchAfter: 24 * 3600
   }),
   cookie: { 
-    secure: process.env.NODE_ENV === 'production',
+    secure: true, // Paksa true karena Railway pakai HTTPS
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000,
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    sameSite: 'none' // Wajib untuk cross-site
   }
 }));
 

@@ -7,7 +7,7 @@ router.post('/login', async (req, res) => {
   const { username, password } = req.body;
   console.log('LOGIN REQUEST:', { username, password: '***' });
   console.log('Session ID:', req.sessionID);
-
+  console.log('Session data:', req.session);
   try {
     // Validasi input
     if (!username || !password) {
