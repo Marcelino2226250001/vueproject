@@ -1,14 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs'); // Ganti ke bcrypt standar
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User'); // Sesuaikan dengan path model Anda
+const User = require('../models/User');
 
-// JWT Secret - pastikan ada di environment variables
+// JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'your-fallback-jwt-secret-key';
+
+// Enhanced logging middleware
+const logRequest = (req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  console.log('Headers:', JSON.stringify(req.headers, null, 2));
+  console.log('Body:', JSON.stringify(req.body, null, 2));
+  next();
+};
 
 // Middleware untuk autentikasi
 const authenticate = (req, res, next) => {
+  console.log('🔍 Authentication check started');
+  
   // Cek JWT token terlebih dahulu
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -16,10 +26,10 @@ const authenticate = (req, res, next) => {
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
       req.user = decoded;
-      console.log('JWT authentication successful:', decoded.username);
+      console.log('✅ JWT authentication successful:', decoded.username);
       return next();
     } catch (error) {
-      console.error('JWT verification failed:', error.message);
+      console.error('❌ JWT verification failed:', error.message);
       // Lanjut ke session-based auth
     }
   }
@@ -27,50 +37,73 @@ const authenticate = (req, res, next) => {
   // Fallback ke session-based authentication
   if (req.session && req.session.user) {
     req.user = req.session.user;
-    console.log('Session authentication successful:', req.user.username);
+    console.log('✅ Session authentication successful:', req.user.username);
     return next();
   }
   
-  console.log('Authentication failed - no valid JWT or session');
+  console.log('❌ Authentication failed - no valid JWT or session');
   return res.status(401).json({ error: 'Not authenticated' });
 };
 
-// Login endpoint - Enhanced
-router.post('/login', async (req, res) => {
+// Login endpoint - Enhanced dengan debugging
+router.post('/login', logRequest, async (req, res) => {
   try {
     const { username, password } = req.body;
     
-    console.log('Login attempt for user:', username);
+    console.log('🚀 Login attempt started');
+    console.log('Username:', username);
+    console.log('Password provided:', !!password);
     
     if (!username || !password) {
+      console.log('❌ Missing credentials');
       return res.status(400).json({ error: 'Username dan password harus diisi' });
     }
 
-    // Cari user di database
+    // Cari user di database dengan logging
+    console.log('🔍 Looking for user in database:', username);
     const user = await User.findOne({ username });
+    
     if (!user) {
-      console.log('User not found:', username);
+      console.log('❌ User not found in database:', username);
+      // Log semua users untuk debugging (hanya di development)
+      if (process.env.NODE_ENV !== 'production') {
+        const allUsers = await User.find({}, 'username role').lean();
+        console.log('Available users:', allUsers);
+      }
       return res.status(401).json({ error: 'Username atau password salah' });
     }
 
-    // Verifikasi password
+    console.log('✅ User found:', {
+      id: user._id,
+      username: user.username,
+      role: user.role,
+      hasPassword: !!user.password
+    });
+
+    // Verifikasi password dengan logging detail
+    console.log('🔐 Verifying password...');
+    console.log('Stored password hash:', user.password?.substring(0, 10) + '...');
+    
     const isValidPassword = await bcrypt.compare(password, user.password);
+    console.log('Password verification result:', isValidPassword);
+    
     if (!isValidPassword) {
-      console.log('Invalid password for user:', username);
+      console.log('❌ Invalid password for user:', username);
       return res.status(401).json({ error: 'Username atau password salah' });
     }
 
-    console.log('Login successful for user:', username);
+    console.log('✅ Login successful for user:', username);
 
     // Prepare user data
     const userData = {
       id: user._id,
+      userId: user._id, // Tambahan untuk kompatibilitas
       username: user.username,
       role: user.role
     };
 
-    // Decide authentication method based on environment or preference
-    const useJWT = process.env.USE_JWT === 'true' || process.env.NODE_ENV === 'production';
+    // Force use JWT for Railway deployment
+    const useJWT = true; // Selalu gunakan JWT untuk production
     
     if (useJWT) {
       // JWT approach
@@ -80,14 +113,17 @@ router.post('/login', async (req, res) => {
         { expiresIn: '24h' }
       );
       
-      console.log('JWT token generated for user:', username);
+      console.log('🎟️ JWT token generated for user:', username);
       
-      res.json({
+      const response = {
         success: true,
         token,
         user: userData,
         message: 'Login berhasil'
-      });
+      };
+      
+      console.log('📤 Sending response:', JSON.stringify(response, null, 2));
+      res.json(response);
     } else {
       // Session approach
       req.session.user = userData;
@@ -95,73 +131,131 @@ router.post('/login', async (req, res) => {
       // Force session save
       req.session.save((err) => {
         if (err) {
-          console.error('Session save error:', err);
+          console.error('❌ Session save error:', err);
           return res.status(500).json({ error: 'Gagal menyimpan session' });
         }
         
-        console.log('Session saved for user:', username, 'Session ID:', req.sessionID);
+        console.log('✅ Session saved for user:', username, 'Session ID:', req.sessionID);
         
-        res.json({
+        const response = {
           success: true,
           user: userData,
           sessionId: req.sessionID,
           message: 'Login berhasil'
-        });
+        };
+        
+        console.log('📤 Sending response:', JSON.stringify(response, null, 2));
+        res.json(response);
       });
     }
 
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('💥 Login error:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// Create default admin user if not exists
+router.post('/create-admin', async (req, res) => {
+  try {
+    console.log('🔧 Creating default admin user...');
+    
+    // Check if admin already exists
+    const existingAdmin = await User.findOne({ username: 'admin' });
+    if (existingAdmin) {
+      console.log('✅ Admin user already exists');
+      return res.json({ message: 'Admin user already exists' });
+    }
+
+    // Create admin user
+    const hashedPassword = await bcrypt.hash('admin', 10);
+    const adminUser = new User({
+      username: 'admin',
+      password: hashedPassword,
+      role: 'admin'
+    });
+
+    await adminUser.save();
+    console.log('✅ Default admin user created');
+    
+    res.json({ 
+      message: 'Default admin user created successfully',
+      username: 'admin',
+      defaultPassword: 'admin'
+    });
+  } catch (error) {
+    console.error('❌ Error creating admin user:', error);
+    res.status(500).json({ error: 'Failed to create admin user' });
   }
 });
 
 // Get current user endpoint
 router.get('/me', authenticate, async (req, res) => {
   try {
-    console.log('Getting user info for:', req.user.username);
+    console.log('👤 Getting user info for:', req.user.username);
     
-    // Optional: Fetch fresh user data from database
+    // Fetch fresh user data from database
     const user = await User.findById(req.user.id || req.user.userId).select('-password');
     
     if (!user) {
-      console.log('User not found in database:', req.user.id || req.user.userId);
+      console.log('❌ User not found in database:', req.user.id || req.user.userId);
       return res.status(404).json({ error: 'User tidak ditemukan' });
     }
     
-    res.json({
+    const response = {
       id: user._id,
       username: user.username,
-      role: user.role,
-      // Tambahkan field lain yang diperlukan
-    });
+      role: user.role
+    };
+    
+    console.log('✅ User info retrieved:', response);
+    res.json(response);
     
   } catch (error) {
-    console.error('Get user error:', error);
+    console.error('❌ Get user error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // Logout endpoint
 router.post('/logout', (req, res) => {
-  console.log('Logout request from user:', req.user?.username || 'unknown');
+  console.log('👋 Logout request from user:', req.user?.username || 'unknown');
   
   if (req.session) {
     req.session.destroy((err) => {
       if (err) {
-        console.error('Session destroy error:', err);
+        console.error('❌ Session destroy error:', err);
         return res.status(500).json({ error: 'Logout gagal' });
       }
       
-      res.clearCookie('inventaris.sid'); // Sesuaikan dengan nama session
+      res.clearCookie('inventaris.sid');
+      console.log('✅ Logout successful');
       res.json({ success: true, message: 'Logout berhasil' });
     });
   } else {
+    console.log('✅ Logout successful (no session)');
     res.json({ success: true, message: 'Logout berhasil' });
   }
 });
 
-// Session status endpoint (untuk debugging)
+// Debug endpoints
+router.get('/debug/users', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({ error: 'Not available in production' });
+  }
+  
+  try {
+    const users = await User.find({}, 'username role createdAt').lean();
+    res.json({ users, count: users.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get('/session-status', (req, res) => {
   res.json({
     sessionID: req.sessionID,
@@ -169,7 +263,8 @@ router.get('/session-status', (req, res) => {
     userInSession: !!req.session?.user,
     user: req.session?.user || null,
     cookies: req.headers.cookie || 'No cookies',
-    authorization: req.headers.authorization || 'No auth header'
+    authorization: req.headers.authorization || 'No auth header',
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -178,10 +273,10 @@ router.get('/protected-test', authenticate, (req, res) => {
   res.json({
     message: 'Anda berhasil mengakses endpoint yang dilindungi',
     user: req.user,
-    timestamp: new Date()
+    timestamp: new Date().toISOString()
   });
 });
 
-// Export middleware untuk digunakan di route lain
+// Export
 module.exports = router;
 module.exports.authenticate = authenticate;
