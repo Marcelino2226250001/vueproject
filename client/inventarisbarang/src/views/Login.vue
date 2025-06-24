@@ -115,47 +115,58 @@ export default {
   },
 
   // Test koneksi saat component dimuat
-  async mounted() {
-    try {
-      // Cek apakah sudah ada token tersimpan
-      const existingToken = localStorage.getItem('authToken');
-      const existingUser = localStorage.getItem('user');
+  // Updated mounted() method in Login.vue
+async mounted() {
+  // Show loading state
+  this.loading = true;
 
-      if (existingToken && existingUser) {
-        console.log('Found existing auth token, verifying...');
-        setAuthToken(existingToken);
-      }
+  try {
+    // First test server connection
+    console.log('Testing server connection...');
+    const isConnected = await this.testConnection();
 
-      // Test koneksi server
-      const response = await apiClient.get('/api/users/me').catch(error => {
-        console.log('Server connection test failed or no active session:', error.message);
-        return null;
-      });
+    if (!isConnected) {
+      this.error = 'Server tidak dapat dijangkau. Mohon coba lagi nanti.';
+      this.loading = false;
+      return;
+    }
 
-      if (response && response.data) {
-        console.log('Server is reachable, current session:', response.data);
+    // Check existing auth
+    const existingToken = localStorage.getItem('authToken');
+    const existingUser = localStorage.getItem('user');
 
-        // Jika sudah login, redirect ke halaman yang sesuai
-        if (response.data.username) {
+    if (existingToken && existingUser) {
+      console.log('Found existing auth token, verifying...');
+      setAuthToken(existingToken);
+
+      try {
+        const response = await apiClient.get('/api/users/me');
+
+        if (response && response.data && response.data.username) {
+          console.log('Valid session found, redirecting...');
           const role = response.data.role?.toLowerCase();
           const akses = roleAccess[role];
           const target = akses === '*' ? '/barang' : akses?.[0] || '/unauthorized';
-          console.log('User already logged in, redirecting to:', target);
           this.$router.push(target);
+          return;
         }
-      } else {
-        console.log('No active session found');
-        // Clear any stale auth data
+      } catch (error) {
+        console.log('Session verification failed:', error.message);
+        // Clear stale auth data
         setAuthToken(null);
         localStorage.removeItem('user');
       }
-    } catch (error) {
-      console.log('Connection test error:', error.message);
-      // Clear auth data if connection test fails
-      setAuthToken(null);
-      localStorage.removeItem('user');
     }
+
+    console.log('No active session, staying on login page');
+
+  } catch (error) {
+    console.error('Login page initialization error:', error);
+    this.error = 'Terjadi kesalahan saat memuat halaman';
+  } finally {
+    this.loading = false;
   }
+}
 };
 </script>
 
