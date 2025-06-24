@@ -192,6 +192,14 @@ try {
 } catch (err) {
   console.error('✗ Error loading dashboard routes:', err.message);
 }
+try {
+  const authRoutes = require('./routes/authRoutes');
+  app.use('/api/auth', authRoutes);
+  console.log('✓ Auth routes loaded');
+} catch (err) {
+  console.error('✗ Error loading auth routes:', err.message);
+}
+
 
 // Connect MongoDB
 mongoose.connect(process.env.MONGO_URI, {
