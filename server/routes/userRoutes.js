@@ -46,7 +46,7 @@ const authenticate = (req, res, next) => {
 };
 
 // Login endpoint - Enhanced dengan debugging
-router.post('/login', logRequest, async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     
@@ -55,21 +55,15 @@ router.post('/login', logRequest, async (req, res) => {
     console.log('Password provided:', !!password);
     
     if (!username || !password) {
-      console.log('❌ Missing credentials');
       return res.status(400).json({ error: 'Username dan password harus diisi' });
     }
 
-    // Cari user di database dengan logging
+    // Cari user di database
     console.log('🔍 Looking for user in database:', username);
     const user = await User.findOne({ username });
     
     if (!user) {
-      console.log('❌ User not found in database:', username);
-      // Log semua users untuk debugging (hanya di development)
-      if (process.env.NODE_ENV !== 'production') {
-        const allUsers = await User.find({}, 'username role').lean();
-        console.log('Available users:', allUsers);
-      }
+      console.log('❌ User not found:', username);
       return res.status(401).json({ error: 'Username atau password salah' });
     }
 
@@ -80,9 +74,9 @@ router.post('/login', logRequest, async (req, res) => {
       hasPassword: !!user.password
     });
 
-    // Verifikasi password dengan logging detail
+    // Verifikasi password
     console.log('🔐 Verifying password...');
-    console.log('Stored password hash:', user.password?.substring(0, 10) + '...');
+    console.log('Stored password hash:', user.password.substring(0, 10) + '...');
     
     const isValidPassword = await bcrypt.compare(password, user.password);
     console.log('Password verification result:', isValidPassword);
@@ -97,65 +91,29 @@ router.post('/login', logRequest, async (req, res) => {
     // Prepare user data
     const userData = {
       id: user._id,
-      userId: user._id, // Tambahan untuk kompatibilitas
       username: user.username,
       role: user.role
     };
 
-    // Force use JWT for Railway deployment
-    const useJWT = true; // Selalu gunakan JWT untuk production
+    // Generate JWT token
+    const token = jwt.sign(
+      userData,
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
     
-    if (useJWT) {
-      // JWT approach
-      const token = jwt.sign(
-        userData,
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-      
-      console.log('🎟️ JWT token generated for user:', username);
-      
-      const response = {
-        success: true,
-        token,
-        user: userData,
-        message: 'Login berhasil'
-      };
-      
-      console.log('📤 Sending response:', JSON.stringify(response, null, 2));
-      res.json(response);
-    } else {
-      // Session approach
-      req.session.user = userData;
-      
-      // Force session save
-      req.session.save((err) => {
-        if (err) {
-          console.error('❌ Session save error:', err);
-          return res.status(500).json({ error: 'Gagal menyimpan session' });
-        }
-        
-        console.log('✅ Session saved for user:', username, 'Session ID:', req.sessionID);
-        
-        const response = {
-          success: true,
-          user: userData,
-          sessionId: req.sessionID,
-          message: 'Login berhasil'
-        };
-        
-        console.log('📤 Sending response:', JSON.stringify(response, null, 2));
-        res.json(response);
-      });
-    }
+    console.log('🔑 JWT token generated for user:', username);
+    
+    res.json({
+      success: true,
+      token,
+      user: userData,
+      message: 'Login berhasil'
+    });
 
   } catch (error) {
     console.error('💥 Login error:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
