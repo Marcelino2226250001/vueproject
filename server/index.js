@@ -8,22 +8,66 @@ const MongoStore = require('connect-mongo');
 const app = express();
 
 // CORS configuration - PERBAIKAN: hapus trailing slash dan tambah log
+// CORS configuration - UPDATED
 app.use(cors({
-  origin: [
-    'http://localhost:5173', // Vite default port
-    'http://localhost:8080', // Vue CLI default port  
-    'http://localhost:3000', // alternative port
-    'http://localhost:5183', // jika ada port lain
-    'https://vueproject-murex.vercel.app',
-    'https://vueproject-production.up.railway.app' 
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:8080', 
+      'http://localhost:3000',
+      'http://localhost:5183',
+      'https://vueproject-murex.vercel.app',
+      'https://vueproject-production.up.railway.app',
+      // Tambahan untuk semua subdomain vercel
+      /https:\/\/.*\.vercel\.app$/,
+      /https:\/\/vueproject.*\.vercel\.app$/
+    ];
+    
+    // Check if origin is allowed
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        return allowed === origin;
+      } else if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return false;
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers'
+  ],
+  optionsSuccessStatus: 200 // For legacy browser support
 }));
 
+// Add preflight handling
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS,PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
 app.set('trust proxy', 1);
 // Session configuration dengan MongoDB store
+// Session configuration - FIXED
 app.use(session({
   secret: process.env.SESSION_SECRET || 'inventaris-app-super-secret-key-2024-jakarta-indonesia-secure',
   resave: false,
@@ -36,11 +80,14 @@ app.use(session({
     touchAfter: 24 * 3600
   }),
   cookie: { 
-    secure: true, // Paksa true karena Railway pakai HTTPS
+    secure: process.env.NODE_ENV === 'production', // Only secure in production
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000,
-    sameSite: 'none' // Wajib untuk cross-site
-  }
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Different for dev/prod
+    domain: process.env.NODE_ENV === 'production' ? undefined : undefined // Let browser handle domain
+  },
+  // Additional options for cross-origin
+  name: 'inventaris.sid'
 }));
 
 // Body parser
