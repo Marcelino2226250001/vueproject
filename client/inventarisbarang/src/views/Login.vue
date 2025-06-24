@@ -13,22 +13,9 @@
 </template>
 
 <script>
-import axios from 'axios';
+import apiClient, { setAuthToken } from '@/helpers/axios';
 import { setUser } from '@/helpers/auth';
 import roleAccess from '@/helpers/roleAccess';
-
-// Configure axios default settings
-axios.defaults.withCredentials = true;
-
-
-// Add axios interceptors for better error handling
-axios.interceptors.response.use(
-  response => response,
-  error => {
-    console.error('Axios error:', error);
-    return Promise.reject(error);
-  }
-);
 
 export default {
   data() {
@@ -47,11 +34,8 @@ export default {
       try {
         console.log('Attempting login with:', { username: this.username });
 
-        // Test connection first
-        const testResponse = await axios.get('/api/users/me').catch(() => null);
-        console.log('Server connection test:', testResponse ? 'OK' : 'Failed');
-
-        const res = await axios.post('/api/users/login', {
+        // Gunakan apiClient yang sudah dikonfigurasi
+        const res = await apiClient.post('/api/users/login', {
           username: this.username,
           password: this.password
         });
@@ -64,23 +48,34 @@ export default {
           throw new Error('Data user tidak lengkap dari server');
         }
 
+        // Handle JWT token jika ada
+        if (userData.token) {
+          setAuthToken(userData.token);
+          console.log('JWT token saved');
+        }
+
         // Simpan user ke localStorage
         setUser(userData);
         localStorage.setItem('user', JSON.stringify(userData));
-
         console.log('User data saved to localStorage:', userData);
 
-        // Test session dengan memanggil /me endpoint
-        const meResponse = await axios.get('/api/users/me');
-        console.log('Session verification:', meResponse.data);
+        // Test session dengan memanggil /me endpoint untuk verifikasi
+        try {
+          const meResponse = await apiClient.get('/api/users/me');
+          console.log('Session verification successful:', meResponse.data);
+        } catch (verifyError) {
+          console.warn('Session verification failed, but continuing with login:', verifyError);
+          // Tidak throw error di sini karena login sudah berhasil
+        }
 
+        // Tentukan redirect berdasarkan role
         const role = userData.role?.toLowerCase();
         const akses = roleAccess[role];
         const target = akses === '*' ? '/barang' : akses?.[0] || '/unauthorized';
 
         console.log('Redirecting to:', target);
 
-        // Delay sebentar untuk memastikan session tersimpan
+        // Redirect dengan delay kecil
         setTimeout(() => {
           this.$router.push(target);
         }, 100);
@@ -88,10 +83,22 @@ export default {
       } catch (err) {
         console.error('Login error:', err);
 
+        // Clear auth data on error
+        setAuthToken(null);
+        localStorage.removeItem('user');
+
         if (err.response) {
           // Server responded with error status
           console.error('Server error response:', err.response.data);
-          this.error = err.response.data.message || 'Login gagal';
+          const serverMessage = err.response.data.message || err.response.data.error;
+
+          if (err.response.status === 401) {
+            this.error = 'Username atau password salah';
+          } else if (err.response.status === 403) {
+            this.error = 'Akun Anda tidak memiliki akses';
+          } else {
+            this.error = serverMessage || 'Login gagal';
+          }
         } else if (err.request) {
           // Request was made but no response received
           console.error('No response received:', err.request);
@@ -110,21 +117,43 @@ export default {
   // Test koneksi saat component dimuat
   async mounted() {
     try {
-      const response = await axios.get('/api/users/me').catch(() => null);
-      if (response) {
+      // Cek apakah sudah ada token tersimpan
+      const existingToken = localStorage.getItem('authToken');
+      const existingUser = localStorage.getItem('user');
+
+      if (existingToken && existingUser) {
+        console.log('Found existing auth token, verifying...');
+        setAuthToken(existingToken);
+      }
+
+      // Test koneksi server
+      const response = await apiClient.get('/api/users/me').catch(error => {
+        console.log('Server connection test failed or no active session:', error.message);
+        return null;
+      });
+
+      if (response && response.data) {
         console.log('Server is reachable, current session:', response.data);
-        // Jika sudah login, redirect
+
+        // Jika sudah login, redirect ke halaman yang sesuai
         if (response.data.username) {
           const role = response.data.role?.toLowerCase();
           const akses = roleAccess[role];
           const target = akses === '*' ? '/barang' : akses?.[0] || '/unauthorized';
+          console.log('User already logged in, redirecting to:', target);
           this.$router.push(target);
         }
       } else {
-        console.log('Server connection test failed or no active session');
+        console.log('No active session found');
+        // Clear any stale auth data
+        setAuthToken(null);
+        localStorage.removeItem('user');
       }
     } catch (error) {
       console.log('Connection test error:', error.message);
+      // Clear auth data if connection test fails
+      setAuthToken(null);
+      localStorage.removeItem('user');
     }
   }
 };
