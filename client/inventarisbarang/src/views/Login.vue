@@ -1,13 +1,16 @@
 <template>
   <div class="login-container">
     <h2>Login</h2>
+    <div v-if="connectionStatus" class="connection-status" :class="connectionStatus.type">
+      {{ connectionStatus.message }}
+    </div>
     <form @submit.prevent="handleLogin">
-      <input v-model="username" placeholder="Username" required />
-      <input v-model="password" type="password" placeholder="Password" required />
+      <input v-model="username" placeholder="Username" required :disabled="loading" />
+      <input v-model="password" type="password" placeholder="Password" required :disabled="loading" />
       <button type="submit" :disabled="loading">
         {{ loading ? 'Loading...' : 'Login' }}
       </button>
-      <p v-if="error" style="color: red;">{{ error }}</p>
+      <p v-if="error" class="error-message">{{ error }}</p>
     </form>
   </div>
 </template>
@@ -18,155 +21,236 @@ import { setUser } from '@/helpers/auth';
 import roleAccess from '@/helpers/roleAccess';
 
 export default {
+  name: 'Login',
   data() {
     return {
       username: '',
       password: '',
       error: '',
-      loading: false
+      loading: false,
+      connectionStatus: null
     };
   },
   methods: {
+    async testConnection() {
+      try {
+        console.log('Testing server connection...');
+        const response = await apiClient.get('/health');
+        console.log('✅ Server reachable:', response.data);
+        this.connectionStatus = {
+          type: 'success',
+          message: 'Server terhubung'
+        };
+        return true;
+      } catch (error) {
+        console.error('❌ Server unreachable:', error.message);
+        this.connectionStatus = {
+          type: 'error',
+          message: 'Server tidak dapat dijangkau'
+        };
+        return false;
+      }
+    },
+
     async handleLogin() {
       this.loading = true;
       this.error = '';
+      this.connectionStatus = null;
 
       try {
+        // Test connection first
+        console.log('Testing connection before login...');
+        const isConnected = await this.testConnection();
+
+        if (!isConnected) {
+          throw new Error('Server tidak dapat dijangkau. Periksa koneksi internet Anda.');
+        }
+
         console.log('Attempting login with:', { username: this.username });
 
-        // Gunakan apiClient yang sudah dikonfigurasi
         const res = await apiClient.post('/api/users/login', {
           username: this.username,
           password: this.password
         });
 
-        console.log('Login response:', res.data);
-        const userData = res.data;
+        console.log('✅ Login response received:', res.data);
 
-        // Verifikasi data yang diterima
-        if (!userData.username || !userData.role) {
+        // Handle different response formats
+        let userData, userInfo;
+
+        if (res.data.user) {
+          // New format: { success: true, user: {...}, token: "..." }
+          userData = res.data;
+          userInfo = res.data.user;
+        } else if (res.data.username) {
+          // Old format: { username: "...", role: "...", token: "..." }
+          userData = res.data;
+          userInfo = res.data;
+        } else {
+          throw new Error('Format response tidak dikenali dari server');
+        }
+
+        // Verify required data
+        if (!userInfo.username || !userInfo.role) {
+          console.error('Incomplete user data:', userInfo);
           throw new Error('Data user tidak lengkap dari server');
         }
 
-        // Handle JWT token jika ada
+        console.log('✅ User data verified:', userInfo);
+
+        // Handle JWT token if present
         if (userData.token) {
           setAuthToken(userData.token);
           console.log('JWT token saved');
         }
 
-        // Simpan user ke localStorage
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
-        console.log('User data saved to localStorage:', userData);
+        // Save user data to localStorage
+        setUser(userInfo);
+        localStorage.setItem('user', JSON.stringify(userInfo));
+        console.log('User data saved to localStorage:', userInfo);
 
-        // Test session dengan memanggil /me endpoint untuk verifikasi
+        // Verify session by calling /me endpoint
         try {
           const meResponse = await apiClient.get('/api/users/me');
-          console.log('Session verification successful:', meResponse.data);
+          console.log('✅ Session verification successful:', meResponse.data);
         } catch (verifyError) {
-          console.warn('Session verification failed, but continuing with login:', verifyError);
-          // Tidak throw error di sini karena login sudah berhasil
+          console.warn('⚠️ Session verification failed, but continuing with login:', verifyError.message);
+          // Don't throw error here as login was successful
         }
 
-        // Tentukan redirect berdasarkan role
-        const role = userData.role?.toLowerCase();
+        // Determine redirect based on role
+        const role = userInfo.role?.toLowerCase();
         const akses = roleAccess[role];
         const target = akses === '*' ? '/barang' : akses?.[0] || '/unauthorized';
 
         console.log('Redirecting to:', target);
 
-        // Redirect dengan delay kecil
+        this.connectionStatus = {
+          type: 'success',
+          message: 'Login berhasil! Mengalihkan...'
+        };
+
+        // Redirect with small delay for better UX
         setTimeout(() => {
           this.$router.push(target);
-        }, 100);
+        }, 500);
 
       } catch (err) {
-        console.error('Login error:', err);
+        console.error('❌ Login error:', err);
 
         // Clear auth data on error
         setAuthToken(null);
         localStorage.removeItem('user');
 
+        // Handle different error types
         if (err.response) {
           // Server responded with error status
-          console.error('Server error response:', err.response.data);
-          const serverMessage = err.response.data.message || err.response.data.error;
+          const status = err.response.status;
+          const serverMessage = err.response.data?.message || err.response.data?.error;
 
-          if (err.response.status === 401) {
+          console.error('Server error response:', {
+            status,
+            data: err.response.data
+          });
+
+          if (status === 401) {
             this.error = 'Username atau password salah';
-          } else if (err.response.status === 403) {
+          } else if (status === 403) {
             this.error = 'Akun Anda tidak memiliki akses';
+          } else if (status >= 500) {
+            this.error = 'Server sedang bermasalah, coba lagi nanti';
+          } else if (status === 0 || status === 404) {
+            this.error = 'Server tidak dapat dijangkau';
           } else {
-            this.error = serverMessage || 'Login gagal';
+            this.error = serverMessage || `Error ${status}: Login gagal`;
           }
         } else if (err.request) {
           // Request was made but no response received
           console.error('No response received:', err.request);
-          this.error = 'Tidak dapat terhubung ke server. Periksa koneksi Anda.';
+          this.error = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
         } else {
           // Something else happened
-          console.error('Error message:', err.message);
+          console.error('Request setup error:', err.message);
           this.error = err.message || 'Terjadi kesalahan pada login';
         }
+
+        this.connectionStatus = {
+          type: 'error',
+          message: this.error
+        };
       } finally {
         this.loading = false;
       }
     }
   },
 
-  // Test koneksi saat component dimuat
-  // Updated mounted() method in Login.vue
-async mounted() {
-  // Show loading state
-  this.loading = true;
+  async mounted() {
+    console.log('Login component mounted');
+    this.loading = true;
 
-  try {
-    // First test server connection
-    console.log('Testing server connection...');
-    const isConnected = await this.testConnection();
+    try {
+      // Test server connection first
+      console.log('Initial connection test...');
+      const isConnected = await this.testConnection();
 
-    if (!isConnected) {
-      this.error = 'Server tidak dapat dijangkau. Mohon coba lagi nanti.';
-      this.loading = false;
-      return;
-    }
-
-    // Check existing auth
-    const existingToken = localStorage.getItem('authToken');
-    const existingUser = localStorage.getItem('user');
-
-    if (existingToken && existingUser) {
-      console.log('Found existing auth token, verifying...');
-      setAuthToken(existingToken);
-
-      try {
-        const response = await apiClient.get('/api/users/me');
-
-        if (response && response.data && response.data.username) {
-          console.log('Valid session found, redirecting...');
-          const role = response.data.role?.toLowerCase();
-          const akses = roleAccess[role];
-          const target = akses === '*' ? '/barang' : akses?.[0] || '/unauthorized';
-          this.$router.push(target);
-          return;
-        }
-      } catch (error) {
-        console.log('Session verification failed:', error.message);
-        // Clear stale auth data
-        setAuthToken(null);
-        localStorage.removeItem('user');
+      if (!isConnected) {
+        this.error = 'Server tidak dapat dijangkau. Mohon coba lagi nanti.';
+        return;
       }
+
+      // Check for existing authentication
+      const existingToken = localStorage.getItem('authToken');
+      const existingUser = localStorage.getItem('user');
+
+      if (existingToken && existingUser) {
+        console.log('Found existing auth data, verifying session...');
+        setAuthToken(existingToken);
+
+        try {
+          const response = await apiClient.get('/api/users/me');
+
+          if (response?.data?.username) {
+            console.log('✅ Valid existing session found, redirecting...');
+            const role = response.data.role?.toLowerCase();
+            const akses = roleAccess[role];
+            const target = akses === '*' ? '/barang' : akses?.[0] || '/unauthorized';
+
+            this.connectionStatus = {
+              type: 'success',
+              message: 'Sesi aktif ditemukan, mengalihkan...'
+            };
+
+            setTimeout(() => {
+              this.$router.push(target);
+            }, 1000);
+            return;
+          }
+        } catch (error) {
+          console.log('❌ Session verification failed:', error.message);
+          // Clear stale auth data
+          setAuthToken(null);
+          localStorage.removeItem('user');
+          localStorage.removeItem('authToken');
+        }
+      }
+
+      console.log('No valid session found, staying on login page');
+      this.connectionStatus = {
+        type: 'info',
+        message: 'Silakan login untuk melanjutkan'
+      };
+
+    } catch (error) {
+      console.error('Login page initialization error:', error);
+      this.error = 'Terjadi kesalahan saat memuat halaman';
+      this.connectionStatus = {
+        type: 'error',
+        message: 'Gagal memuat halaman login'
+      };
+    } finally {
+      this.loading = false;
     }
-
-    console.log('No active session, staying on login page');
-
-  } catch (error) {
-    console.error('Login page initialization error:', error);
-    this.error = 'Terjadi kesalahan saat memuat halaman';
-  } finally {
-    this.loading = false;
   }
-}
 };
 </script>
 
@@ -187,6 +271,32 @@ async mounted() {
   color: #2c3e50;
 }
 
+.connection-status {
+  padding: 10px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.connection-status.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.connection-status.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.connection-status.info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
 .login-container form {
   display: flex;
   flex-direction: column;
@@ -198,6 +308,11 @@ async mounted() {
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 16px;
+}
+
+.login-container input:disabled {
+  background-color: #f8f9fa;
+  cursor: not-allowed;
 }
 
 .login-container input:focus {
@@ -226,8 +341,10 @@ async mounted() {
   cursor: not-allowed;
 }
 
-.login-container p {
+.error-message {
+  color: #dc3545;
   text-align: center;
   margin: 10px 0 0 0;
+  font-size: 14px;
 }
 </style>
