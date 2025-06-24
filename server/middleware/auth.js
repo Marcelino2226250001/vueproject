@@ -1,22 +1,27 @@
 // middleware/auth.js
-const requireAuth = (req, res, next) => {
-  console.log('Auth middleware - Session ID:', req.sessionID);
-  console.log('Auth middleware - Session user:', req.session?.user);
-  console.log('Auth middleware - Cookies:', req.headers.cookie);
+// AFTER  (ganti seluruh fungsi)
+const jwt = require('jsonwebtoken');
 
-  if (req.session && req.session.user) {
-    // User is authenticated
-    req.user = req.session.user;
+module.exports.requireAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.split(' ')[1]
+    : null;
+
+  if (!token) {
+    return res.status(401).json({ error: 'No token' });
+  }
+
+  try {
+    // Pastikan JWT_SECRET sudah ada di .env
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = payload;          // simpan info user di request
     next();
-  } else {
-    // User is not authenticated
-    console.log('Authentication failed - no session user');
-    res.status(401).json({ 
-      error: 'Authentication required',
-      message: 'Please login to access this resource'
-    });
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid token' });
   }
 };
+
 
 // Middleware untuk role-based access
 const requireRole = (roles) => {
