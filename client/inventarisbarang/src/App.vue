@@ -1,9 +1,9 @@
 <template>
   <v-app>
-    <!-- Sidebar -->
+
     <v-navigation-drawer app permanent>
       <v-list dense nav>
-        <!-- Logo + Judul -->
+
         <v-list-item class="d-flex flex-column align-center py-4">
           <v-avatar size="48" class="mb-2">
             <v-img src="/logo.png" />
@@ -15,7 +15,7 @@
 
         <v-divider class="my-2" />
 
-        <!-- Navigasi -->
+
 
         <v-list-item to="/dashboard" link v-if="canAccess('/dashboard')" prepend-icon="mdi-view-dashboard">
           <v-list-item-title>Dashboard</v-list-item-title>
@@ -66,11 +66,6 @@
           <v-list-item-title>Laporan Pembelian</v-list-item-title>
         </v-list-item>
 
-        <!-- Navigasi -->
-
-         <!--<v-list-item to="/antar-barang" link v-if="canAccess('/antar-barang')" prepend-icon="mdi-truck">
-          <v-list-item-title>Antar Barang</v-list-item-title>
-        </v-list-item>-->
 
 
         <v-list-item @click="logout" prepend-icon="mdi-logout">
@@ -79,7 +74,7 @@
       </v-list>
     </v-navigation-drawer>
 
-    <!-- Topbar -->
+
     <v-app-bar app color="blue-darken-3" dark>
       <v-toolbar-title>Dashboard Inventaris</v-toolbar-title>
       <v-spacer />
@@ -100,7 +95,7 @@
       </v-menu>
     </v-app-bar>
 
-    <!-- Konten -->
+
     <v-main>
       <v-container fluid>
         <router-view :key="$route.fullPath" />
@@ -147,7 +142,7 @@ export default {
   },
   watch: {
     '$route.fullPath'() {
-      this.getUser(); // agar update jika user berubah
+      this.getUser();
     }
   }
 }

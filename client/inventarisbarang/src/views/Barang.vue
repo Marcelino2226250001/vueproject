@@ -210,7 +210,7 @@ export default {
 .v-data-table table,
 .v-data-table th,
 .v-data-table td {
-  border: 10px solid #000 !important; /* ⬅️ buat garis lebih tebal */
+  border: 10px solid #000 !important;
 }
 
 .v-data-table th {

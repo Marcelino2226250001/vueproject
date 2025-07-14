@@ -2,7 +2,7 @@
   <div>
     <h2 class="text-xl font-bold mb-4">Laporan Pembelian</h2>
 
-    <!-- Filter -->
+
     <v-card class="mb-6 pa-4" flat>
       <v-row dense>
         <v-col cols="12" md="3">
@@ -26,7 +26,7 @@
       </v-row>
     </v-card>
 
-    <!-- Tabel -->
+
     <v-card flat>
       <v-data-table
         :headers="headers"
@@ -119,13 +119,13 @@ export default {
     },
     async hapusSemuaPembelian() {
       try {
-        // Simpan data laporan sebelum dihapus untuk logging
+
         const laporanSebelumHapus = [...this.laporan];
 
-        // Hapus semua data pembelian
+
         await axios.delete('/api/pembelian/semua');
 
-        // Catat aktivitas untuk setiap item yang dihapus
+
         for (const pembelian of laporanSebelumHapus) {
           if (pembelian.items && Array.isArray(pembelian.items)) {
             for (const item of pembelian.items) {
@@ -141,7 +141,7 @@ export default {
           }
         }
 
-        // Reset data laporan
+
         this.laporan = [];
         alert('Riwayat pembelian berhasil dihapus dan aktivitas telah dicatat.');
 
@@ -156,7 +156,7 @@ export default {
     const userData = localStorage.getItem('user');
     const user = userData ? JSON.parse(userData) : null;
     this.role = user?.role?.toLowerCase() || '';
-    this.loggedInUser = user; // Simpan data user untuk logging
+    this.loggedInUser = user;
   }
 };
 </script>

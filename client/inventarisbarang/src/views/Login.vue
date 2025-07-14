@@ -36,14 +36,14 @@ export default {
       try {
         console.log('Testing server connection...');
         const response = await apiClient.get('/health');
-        console.log('✅ Server reachable:', response.data);
+        console.log(' Server reachable:', response.data);
         this.connectionStatus = {
           type: 'success',
           message: 'Server terhubung'
         };
         return true;
       } catch (error) {
-        console.error('❌ Server unreachable:', error.message);
+        console.error(' Server unreachable:', error.message);
         this.connectionStatus = {
           type: 'error',
           message: 'Server tidak dapat dijangkau'
@@ -58,7 +58,7 @@ export default {
       this.connectionStatus = null;
 
       try {
-        // Test connection first
+
         console.log('Testing connection before login...');
         const isConnected = await this.testConnection();
 
@@ -73,52 +73,52 @@ export default {
           password: this.password
         });
 
-        console.log('✅ Login response received:', res.data);
+        console.log('Login response received:', res.data);
 
-        // Handle different response formats
+
         let userData, userInfo;
 
         if (res.data.user) {
-          // New format: { success: true, user: {...}, token: "..." }
+
           userData = res.data;
           userInfo = res.data.user;
         } else if (res.data.username) {
-          // Old format: { username: "...", role: "...", token: "..." }
+
           userData = res.data;
           userInfo = res.data;
         } else {
           throw new Error('Format response tidak dikenali dari server');
         }
 
-        // Verify required data
+
         if (!userInfo.username || !userInfo.role) {
           console.error('Incomplete user data:', userInfo);
           throw new Error('Data user tidak lengkap dari server');
         }
 
-        console.log('✅ User data verified:', userInfo);
+        console.log('User data verified:', userInfo);
 
-        // Handle JWT token if present
+
         if (userData.token) {
           setAuthToken(userData.token);
           console.log('JWT token saved');
         }
 
-        // Save user data to localStorage
+
         setUser(userInfo);
         localStorage.setItem('user', JSON.stringify(userInfo));
         console.log('User data saved to localStorage:', userInfo);
 
-        // Verify session by calling /me endpoint
+
         try {
           const meResponse = await apiClient.get('/api/users/me');
           console.log('✅ Session verification successful:', meResponse.data);
         } catch (verifyError) {
           console.warn('⚠️ Session verification failed, but continuing with login:', verifyError.message);
-          // Don't throw error here as login was successful
+
         }
 
-        // Determine redirect based on role
+
         const role = userInfo.role?.toLowerCase();
         const akses = roleAccess[role];
         const target = akses === '*' ? '/barang' : akses?.[0] || '/unauthorized';
@@ -130,7 +130,7 @@ export default {
           message: 'Login berhasil! Mengalihkan...'
         };
 
-        // Redirect with small delay for better UX
+
         setTimeout(() => {
           this.$router.push(target);
         }, 500);
@@ -138,13 +138,13 @@ export default {
       } catch (err) {
         console.error('❌ Login error:', err);
 
-        // Clear auth data on error
+
         setAuthToken(null);
         localStorage.removeItem('user');
 
-        // Handle different error types
+
         if (err.response) {
-          // Server responded with error status
+
           const status = err.response.status;
           const serverMessage = err.response.data?.message || err.response.data?.error;
 
@@ -165,11 +165,11 @@ export default {
             this.error = serverMessage || `Error ${status}: Login gagal`;
           }
         } else if (err.request) {
-          // Request was made but no response received
+
           console.error('No response received:', err.request);
           this.error = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
         } else {
-          // Something else happened
+
           console.error('Request setup error:', err.message);
           this.error = err.message || 'Terjadi kesalahan pada login';
         }
@@ -189,7 +189,7 @@ export default {
     this.loading = true;
 
     try {
-      // Test server connection first
+
       console.log('Initial connection test...');
       const isConnected = await this.testConnection();
 
@@ -198,7 +198,7 @@ export default {
         return;
       }
 
-      // Check for existing authentication
+
       const existingToken = localStorage.getItem('authToken');
       const existingUser = localStorage.getItem('user');
 
@@ -210,7 +210,7 @@ export default {
           const response = await apiClient.get('/api/users/me');
 
           if (response?.data?.username) {
-            console.log('✅ Valid existing session found, redirecting...');
+            console.log(' Valid existing session found, redirecting...');
             const role = response.data.role?.toLowerCase();
             const akses = roleAccess[role];
             const target = akses === '*' ? '/barang' : akses?.[0] || '/unauthorized';
@@ -226,8 +226,8 @@ export default {
             return;
           }
         } catch (error) {
-          console.log('❌ Session verification failed:', error.message);
-          // Clear stale auth data
+          console.log(' Session verification failed:', error.message);
+
           setAuthToken(null);
           localStorage.removeItem('user');
           localStorage.removeItem('authToken');

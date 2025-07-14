@@ -2,7 +2,7 @@
   <div>
     <h2>Log Aktivitas Barang</h2>
 
-    <!-- Filter dan Tombol Aksi -->
+
     <v-row class="my-4">
       <v-col cols="12" sm="6" md="4">
         <v-select
@@ -29,7 +29,7 @@
       </v-col>
     </v-row>
 
-    <!-- Tabel log -->
+
     <v-data-table
       :headers="headers"
       :items="filteredLogs"
@@ -41,7 +41,7 @@
       </template>
     </v-data-table>
 
-    <!-- Dialog Konfirmasi Hapus Seluruh Log -->
+
     <v-dialog v-model="dialogHapusSemuaLog" max-width="500px" persistent>
       <v-card>
         <v-card-title class="text-h5 text-error">
@@ -69,7 +69,7 @@
             </ul>
           </div>
 
-          <!-- Langkah 1: Konfirmasi pertama -->
+
           <div v-if="stepKonfirmasi === 1">
             <v-alert type="warning" class="mb-3">
               <strong>Langkah 1/2:</strong> Apakah Anda yakin ingin melanjutkan?
@@ -79,7 +79,7 @@
             </p>
           </div>
 
-          <!-- Langkah 2: Konfirmasi final -->
+
           <div v-if="stepKonfirmasi === 2">
             <v-alert type="error" class="mb-3">
               <strong>Langkah 2/2:</strong> Konfirmasi terakhir
@@ -96,7 +96,7 @@
         <v-card-actions>
           <v-spacer></v-spacer>
 
-          <!-- Tombol Batal (selalu ada) -->
+
           <v-btn
             color="grey"
             variant="text"
@@ -105,7 +105,7 @@
             Batal
           </v-btn>
 
-          <!-- Tombol Lanjut untuk step 1 -->
+
           <v-btn
             v-if="stepKonfirmasi === 1"
             color="warning"
@@ -115,7 +115,6 @@
             Ya, Lanjutkan
           </v-btn>
 
-          <!-- Tombol Final Hapus untuk step 2 -->
           <v-btn
             v-if="stepKonfirmasi === 2"
             color="error"
@@ -130,7 +129,7 @@
       </v-card>
     </v-dialog>
 
-    <!-- Loading overlay saat menghapus -->
+
     <v-overlay v-model="sedangHapus" class="align-center justify-center">
       <v-progress-circular
         indeterminate
@@ -151,7 +150,7 @@ export default {
     return {
       logList: [],
       tipeFilter: '',
-      tipeOptions: ['penambahan', 'pengurangan', 'penjualan', 'penerimaan', 'pembatalan'], // tambahkan 'pembatalan'
+      tipeOptions: ['penambahan', 'pengurangan', 'penjualan', 'penerimaan', 'pembatalan'],
       headers: [
         { title: 'Tanggal', key: 'tanggal' },
         { title: 'Tipe', key: 'tipe' },
@@ -161,12 +160,12 @@ export default {
         { title: 'Oleh', key: 'oleh' }
       ],
 
-      // State untuk dialog hapus semua log
+
       dialogHapusSemuaLog: false,
-      stepKonfirmasi: 1, // 1 atau 2 (tidak perlu 3 lagi)
+      stepKonfirmasi: 1,
       sedangHapus: false,
 
-      // User yang login (untuk log aktivitas)
+
       loggedInUser: JSON.parse(localStorage.getItem('user')) || null
     };
   },
@@ -193,7 +192,7 @@ export default {
         return;
       }
 
-      // Reset state dialog
+
       this.stepKonfirmasi = 1;
       this.dialogHapusSemuaLog = true;
     },
@@ -209,12 +208,12 @@ export default {
       try {
         const jumlahLogSebelum = this.logList.length;
 
-        // Panggil API untuk hapus semua log
+
         const response = await axios.delete('/api/log/hapus-semua');
 
-        console.log('✅ Response hapus semua log:', response.data);
+        console.log(' Response hapus semua log:', response.data);
 
-        // Catat aktivitas penghapusan log (ironis tapi penting untuk audit)
+
         try {
           await axios.post('/api/log/aktivitas', {
             tanggal: new Date(),
@@ -228,17 +227,17 @@ export default {
           console.warn('Gagal mencatat log penghapusan:', logError);
         }
 
-        // Refresh data
+
         await this.fetchLogAktivitas();
 
-        // Tutup dialog
+
         this.dialogHapusSemuaLog = false;
         this.stepKonfirmasi = 1;
 
         alert(`Berhasil menghapus ${jumlahLogSebelum} log aktivitas dari database.`);
 
       } catch (error) {
-        console.error('❌ Error saat menghapus semua log:', error);
+        console.error(' Error saat menghapus semua log:', error);
 
         let errorMessage = 'Terjadi kesalahan saat menghapus log';
         if (error.response?.data?.message) {

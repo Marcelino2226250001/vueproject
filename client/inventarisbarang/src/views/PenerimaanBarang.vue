@@ -2,7 +2,7 @@
   <div>
     <h2>Penerimaan Barang</h2>
 
-    <!-- Pilih Pembelian -->
+
     <v-card flat outlined>
       <v-card-title>Pilih Transaksi Pembelian</v-card-title>
       <v-card-text>
@@ -17,7 +17,7 @@
       </v-card-text>
     </v-card>
 
-    <!-- Form Detail Pembelian -->
+
     <v-card flat outlined v-if="pembelianDetail">
       <v-card-title>Barang yang Dipesan</v-card-title>
       <v-card-text>
@@ -65,13 +65,13 @@ export default {
   methods: {
     async fetchPembelian() {
       try {
-        // Selalu fetch data terbaru dari server
+
         const res = await axios.get('/api/pembelian/belum-diterima');
         this.pembelianList = res.data;
 
         console.log('Data pembelian ter-update:', this.pembelianList.length, 'items');
 
-        // Reset pilihan jika data yang dipilih sudah tidak ada
+
         if (this.pembelianDipilih && !this.pembelianList.find(p => p._id === this.pembelianDipilih)) {
           this.pembelianDipilih = '';
           this.pembelianDetail = null;
@@ -121,7 +121,7 @@ export default {
 
         await axios.post('/api/penerimaan', payload);
 
-        // Log aktivitas untuk setiap item
+
         for (const item of this.pembelianDetail.items) {
           await axios.post('/api/log/aktivitas', {
             tanggal: new Date(),
@@ -152,16 +152,16 @@ export default {
       if (!konfirmasi) return;
 
       const pembelianId = this.pembelianDetail._id;
-      const itemsToLog = [...this.pembelianDetail.items]; // Copy items sebelum reset
+      const itemsToLog = [...this.pembelianDetail.items];
 
       try {
         console.log('Menghapus pembelian ID:', pembelianId);
 
-        // Reset state terlebih dahulu untuk responsivitas UI
+
         this.pembelianDipilih = '';
         this.pembelianDetail = null;
 
-        // Catat log pembatalan (jangan throw error jika gagal)
+
         for (const item of itemsToLog) {
           try {
             await axios.post('/api/log/aktivitas', {
@@ -175,15 +175,15 @@ export default {
             console.log('Log pembatalan berhasil dicatat untuk:', item.nama_barang);
           } catch (logError) {
             console.warn('Warning - Error saat mencatat log untuk', item.nama_barang, ':', logError);
-            // Lanjutkan proses meskipun log gagal
+
           }
         }
 
-        // Hapus transaksi pembelian
+
         await axios.delete(`/api/pembelian/${pembelianId}`);
         console.log('Berhasil hapus pembelian:', pembelianId);
 
-        // Refresh data dari server
+
         await this.fetchPembelian();
 
         alert('Transaksi pembelian berhasil dibatalkan dan dihapus dari sistem.');
@@ -191,14 +191,14 @@ export default {
       } catch (error) {
         console.error('Error saat membatalkan transaksi:', error);
 
-        // Tetap lakukan refresh meskipun ada error
+
         try {
           await this.fetchPembelian();
           alert('Transaksi berhasil dibatalkan meskipun ada error dalam proses logging.');
         } catch (refreshError) {
           console.error('Error saat refresh:', refreshError);
           alert('Transaksi mungkin sudah dibatalkan. Silakan refresh halaman secara manual.');
-          // Force reload halaman jika refresh gagal
+
           window.location.reload();
         }
       }

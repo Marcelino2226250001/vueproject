@@ -32,7 +32,7 @@
       </tbody>
     </v-table>
 
-    <!-- Form Tambah/Edit -->
+
     <v-dialog v-model="showForm" max-width="500px">
       <v-card>
         <v-card-title>{{ pelanggan._id ? 'Edit' : 'Tambah' }} Pelanggan</v-card-title>
@@ -66,7 +66,7 @@ export default {
       },
       showForm: false,
       search: '',
-      loggedInUser: JSON.parse(localStorage.getItem('user')) || null // untuk log pengguna
+      loggedInUser: JSON.parse(localStorage.getItem('user')) || null
     };
   },
   computed: {
@@ -91,7 +91,7 @@ export default {
 
   const data = {
     ...this.pelanggan,
-    oleh: this.loggedInUser?.username || 'admin' // kirim "oleh" ke backend
+    oleh: this.loggedInUser?.username || 'admin'
   };
 
   axios[method](url, data)
@@ -101,7 +101,7 @@ export default {
         ? `Mengedit data pelanggan: ${this.pelanggan.nama}`
         : `Menambahkan pelanggan baru: ${this.pelanggan.nama}`;
 
-      // Kirim log ke log aktivitas (optional, jika masih ingin tetap pakai frontend log juga)
+
       axios.post('/api/log/aktivitas', {
         tanggal: new Date(),
         tipe: tipeLog,
@@ -130,11 +130,11 @@ export default {
   if (confirm('Yakin ingin menghapus pelanggan ini?')) {
     axios.delete(`/api/pelanggan/${id}`, {
       data: {
-        oleh: this.loggedInUser?.username || 'admin' // kirim ke backend
+        oleh: this.loggedInUser?.username || 'admin'
       }
     })
     .then(() => {
-      // Kirim log frontend (optional)
+
       axios.post('/api/log/aktivitas', {
         tanggal: new Date(),
         tipe: 'hapus',

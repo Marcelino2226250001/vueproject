@@ -2,7 +2,7 @@
   <div>
     <h2>Transaksi Pembelian</h2>
 
-    <!-- FORM SUPPLIER -->
+
 <v-card class="mb-4" flat outlined>
   <v-card-title>Informasi Supplier</v-card-title>
   <v-card-text>
@@ -23,7 +23,7 @@
 
 
 
-   <!-- FORM TAMBAH BARANG -->
+
 <v-card class="mb-4" flat outlined>
   <v-card-title>Tambah Barang dari Supply</v-card-title>
   <v-card-text>
@@ -72,7 +72,7 @@
 </v-card>
 
 
-    <!-- TABEL BARANG -->
+
     <v-card flat outlined>
       <v-card-title>Daftar Barang Dibeli</v-card-title>
       <v-card-text>
@@ -108,7 +108,7 @@
       </v-card-text>
     </v-card>
 
-    <!-- SIMPAN -->
+
     <v-card class="mt-6" flat>
       <v-card-text class="text-center">
         <v-btn color="success" size="large" elevation="3" rounded @click="simpanPembelian">

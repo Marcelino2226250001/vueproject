@@ -2,9 +2,6 @@
   <div>
     <h2>Transaksi Penjualan</h2>
 
-
-
-    <!-- FORM PELANGGAN -->
 <v-card class="mb-4" flat outlined>
   <v-card-title>Pelanggan</v-card-title>
   <v-card-text>
@@ -52,7 +49,7 @@
 </v-card>
 
 
-    <!-- FORM TAMBAH BARANG -->
+
     <v-card class="mb-4" flat outlined>
       <v-card-title>Tambah Barang</v-card-title>
       <v-card-text>
@@ -77,7 +74,7 @@
       </v-card-text>
     </v-card>
 
-    <!-- TABEL TRANSAKSI -->
+
     <v-card flat outlined>
       <v-card-title>Barang yang Dibeli</v-card-title>
       <v-card-text>
@@ -122,7 +119,7 @@
       </v-card-text>
     </v-card>
 
-    <!-- TOMBOL AKSI -->
+
     <v-card class="mt-6" flat>
       <v-card-text class="text-center">
         <v-btn
@@ -228,13 +225,13 @@ export default {
       this.items.splice(index, 1);
     },
     async simpanPenjualan() {
-  // Validasi nama pelanggan jika UMUM
+
   if (this.pelanggan.status === 'umum' && !this.pelanggan.nama) {
     alert("Nama pelanggan belum diisi!");
     return;
   }
 
-  // Validasi pelanggan tetap
+
   if (this.pelanggan.status === 'member' && !this.pelangganTetapDipilih) {
     alert("Pelanggan tetap belum dipilih!");
     return;

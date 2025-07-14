@@ -2,7 +2,7 @@
   <div>
     <h2>Riwayat Penjualan</h2>
 
-    <!--  Filter Tanggal -->
+
     <v-row dense class="mb-4">
       <v-col cols="12" md="4">
         <v-text-field
@@ -29,7 +29,7 @@
       </v-col>
     </v-row>
 
-    <!-- Tabel Riwayat -->
+
     <v-table class="mb-4">
       <thead>
         <tr>
@@ -56,7 +56,7 @@
       </tbody>
     </v-table>
 
-    <!--  Modal Detail Transaksi  -->
+
     <v-dialog v-model="showModal" max-width="600">
       <v-card>
         <v-card-title class="text-h6">Detail Transaksi</v-card-title>
@@ -176,7 +176,7 @@ export default {
       }
     },
     async cetakNota(item) {
-      // Cetak nota terlebih dahulu
+
       const notaWindow = window.open('', '_blank');
       const htmlContent = `
         <html>
@@ -237,7 +237,7 @@ export default {
       notaWindow.document.write(htmlContent);
       notaWindow.document.close();
 
-      // Catat aktivitas cetak untuk setiap item
+
       try {
         for (const itemBarang of item.items) {
           await axios.post('/api/log/aktivitas', {
@@ -256,13 +256,13 @@ export default {
     async hapusRiwayat(id) {
       if (confirm('Yakin ingin menghapus transaksi ini?')) {
         try {
-          // Cari data transaksi sebelum dihapus untuk logging
+
           const transaksi = this.riwayat.find(item => item._id === id);
 
-          // Hapus transaksi dari database
+
           await axios.delete(`/api/penjualan/${id}`);
 
-          // Catat aktivitas hapus untuk setiap item dalam transaksi
+
           if (transaksi && transaksi.items) {
             for (const item of transaksi.items) {
               await axios.post('/api/log/aktivitas', {
@@ -276,7 +276,7 @@ export default {
             }
           }
 
-          // Refresh data riwayat
+
           this.fetchRiwayat();
           alert('Transaksi berhasil dihapus');
         } catch (err) {
@@ -291,7 +291,7 @@ export default {
     const userData = localStorage.getItem('user');
     const user = userData ? JSON.parse(userData) : null;
     this.role = user?.role?.toLowerCase() || '';
-    this.loggedInUser = user; // Simpan data user untuk logging
+    this.loggedInUser = user;
   }
 };
 </script>

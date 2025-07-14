@@ -2,7 +2,7 @@
   <div>
     <h2 class="mb-4">Data Supply Barang</h2>
 
-    <!-- FORM INPUT -->
+
     <v-form ref="form" @submit.prevent="simpanSupply" class="mb-6">
   <v-row dense>
     <v-col cols="12" md="3">
@@ -52,7 +52,7 @@
       </v-row>
     </v-form>
 
-    <!-- SEARCH DAN SORT -->
+
     <v-row dense class="mb-4">
       <v-col cols="12" md="6">
         <v-text-field
@@ -80,7 +80,7 @@
       </v-col>
     </v-row>
 
-    <!-- TABEL -->
+
     <v-table>
       <thead>
         <tr>
@@ -171,7 +171,7 @@ export default {
 
 ,
     editSupply(item) {
-      this.form = { ...item }; // pastikan _id ikut terbawa
+      this.form = { ...item };
     },
     async hapusSupply(id) {
       if (confirm('Yakin ingin menghapus data ini?')) {

@@ -55,7 +55,6 @@ export default {
   try {
     const res = await axios.get('/api/products');
 
-    // ❗ Filter data yang kosong atau tidak valid
     this.barangList = res.data.filter(barang =>
       barang.nama && barang.nama.trim() !== '' &&
       barang.kode && barang.kode.trim() !== '' &&
