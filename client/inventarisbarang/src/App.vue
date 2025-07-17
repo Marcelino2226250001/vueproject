@@ -54,6 +54,10 @@
           <v-list-item-title>Riwayat Penjualan</v-list-item-title>
         </v-list-item>
 
+          <v-list-item to="/riwayatharga" link v-if="canAccess('/riwayatharga')" prepend-icon="mdi-history">
+  <v-list-item-title>Riwayat Harga</v-list-item-title>
+</v-list-item>
+
         <v-list-item to="/log" link v-if="canAccess('/log')" prepend-icon="mdi-history">
           <v-list-item-title>Log Aktivitas</v-list-item-title>
         </v-list-item>
@@ -88,12 +92,7 @@
           <v-list-item>
             <v-list-item-title>Profil</v-list-item-title>
           </v-list-item>
-          <v-list-item to="/riwayat-harga" link>
-  <v-list-item-icon>
-    <v-icon>mdi-history</v-icon>
-  </v-list-item-icon>
-  <v-list-item-title>Riwayat Harga</v-list-item-title>
-</v-list-item>
+
           <v-list-item @click="logout">
             <v-list-item-title>Logout</v-list-item-title>
           </v-list-item>
