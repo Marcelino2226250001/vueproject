@@ -2,7 +2,6 @@
   <div>
     <h2 class="text-xl font-bold mb-4">Laporan Pembelian</h2>
 
-
     <v-card class="mb-6 pa-4" flat>
       <v-row dense>
         <v-col cols="12" md="3">
@@ -19,13 +18,17 @@
         </v-col>
         <v-col cols="12" class="text-right">
           <v-btn color="primary" @click="fetchLaporan(true)" class="mr-2">Tampilkan</v-btn>
+          <!-- [PERUBAHAN] Menambahkan tombol ekspor PDF -->
+          <v-btn color="green" @click="exportPDF" class="mr-2" :disabled="laporan.length === 0">
+            <v-icon left>mdi-file-pdf-box</v-icon>
+            Ekspor PDF
+          </v-btn>
           <v-btn v-if="role !== 'gudang' && role !== 'penerimaan'" color="error" @click="confirmHapusSemua">
-  Bersihkan Riwayat
-</v-btn>
+            Bersihkan Riwayat
+          </v-btn>
         </v-col>
       </v-row>
     </v-card>
-
 
     <v-card flat>
       <v-data-table
@@ -37,25 +40,21 @@
         density="comfortable"
       >
         <template v-slot:item.tanggal="{ item }">
-          {{ formatDate(item.tanggal) }}
+          {{ formatDate(item.raw.tanggal) }}
         </template>
-
         <template v-slot:item.barang="{ item }">
           <ul class="pl-4">
-            <li v-for="(i, idx) in item.items" :key="idx">
+            <li v-for="(i, idx) in item.raw.items" :key="idx">
               {{ i.nama_barang }} ({{ i.jumlah }})
             </li>
           </ul>
         </template>
-
         <template v-slot:item.jumlah="{ item }">
-          {{ totalJumlah(item.items || []) }}
+          {{ totalJumlah(item.raw.items || []) }}
         </template>
-
         <template v-slot:item.total="{ item }">
-          Rp {{ (item.total || 0).toLocaleString('id-ID') }}
+          Rp {{ (item.raw.total || 0).toLocaleString('id-ID') }}
         </template>
-
         <template v-slot:no-data>
           <div class="text-center text-grey py-4">Tidak ada data pembelian</div>
         </template>
@@ -66,7 +65,8 @@
 
 <script>
 import axios from 'axios';
-
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 export default {
   data() {
     return {
