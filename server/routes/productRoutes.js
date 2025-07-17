@@ -4,19 +4,26 @@ const Product = require('../models/Product');
 const LogBarang = require('../models/LogBarang');
 
 // Fungsi untuk generate kode barang baru
+// file: productRoutes.js
+
 async function generateKodeBarang() {
   try {
-    // 1. Cari produk terakhir berdasarkan 'kode' untuk menemukan nomor tertinggi
-    const lastProduct = await Product.findOne().sort({ kode: -1 });
+    // CARA PERBAIKAN: Gunakan find(), sort(), dan limit(1) untuk hasil yang pasti.
+    const lastProducts = await Product.find({ kode: { $regex: '^BRG' } })
+      .sort({ kode: -1 }) // Urutkan dari kode terbesar ke terkecil
+      .limit(1);          // Ambil hanya 1 hasil teratas
+
+    // Hasil dari find() adalah sebuah array, jadi kita ambil elemen pertamanya.
+    const lastProduct = lastProducts[0]; 
     let nextNumber = 1;
 
-    if (lastProduct && lastProduct.kode && lastProduct.kode.startsWith('BRG')) {
-      // 2. Jika ada, ambil angkanya dan tambahkan 1
+    if (lastProduct) {
+      // Ambil angka dari kode terakhir dan tambahkan 1
       const lastNumber = parseInt(lastProduct.kode.replace('BRG', ''));
       nextNumber = lastNumber + 1;
     }
 
-    // 3. Format kode baru dengan padding nol (contoh: BRG0001)
+    // Format kode baru dengan padding nol (contoh: BRG0002)
     const newKode = `BRG${nextNumber.toString().padStart(4, '0')}`;
     return newKode;
 
