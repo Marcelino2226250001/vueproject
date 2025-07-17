@@ -14,6 +14,7 @@ import Unauthorized from '@/views/Unauthorized.vue'
 import Supply from '@/views/Supply.vue'
 import Pelanggan from '@/views/Pelanggan.vue'
 import Dashboard  from '@/views/Dashboard.vue'
+import RiwayatHarga from '../views/RiwayatHarga.vue'
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -31,6 +32,7 @@ const routes = [
   { path: '/supply', component: Supply },
   { path: '/pelanggan', component: Pelanggan },
   { path: '/dashboard', component: Dashboard },
+  { path: '/riwayat-harga', component: RiwayatHarga },
 ]
 
 

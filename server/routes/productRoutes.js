@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
 const LogBarang = require('../models/LogBarang');
-
+const PriceHistory = require('../models/RiwayatHarga');
 // Fungsi untuk generate kode barang baru
 // file: productRoutes.js
 
@@ -82,25 +82,45 @@ router.post('/', async (req, res) => {
 // PUT: Edit barang + log
 router.put('/:id', async (req, res) => {
   try {
-    // Saat edit, kita tidak mengubah kode barang
-    const data = req.body;
-    const updated = await Product.findByIdAndUpdate(req.params.id, data, { new: true });
+    const dataToUpdate = req.body;
 
-    if (!updated) {
+    // 1. Ambil data produk saat ini SEBELUM di-update
+    const productSebelumnya = await Product.findById(req.params.id);
+    if (!productSebelumnya) {
       return res.status(404).json({ error: 'Barang tidak ditemukan' });
     }
 
+    // 2. Lakukan update seperti biasa
+    const productSesudahnya = await Product.findByIdAndUpdate(req.params.id, dataToUpdate, { new: true });
+
+    // 3. Bandingkan harga lama dan baru. Jika berbeda, buat catatan riwayat.
+    const hargaBeliBerubah = productSebelumnya.harga_beli !== productSesudahnya.harga_beli;
+    const hargaJualBerubah = productSebelumnya.harga_jual !== productSesudahnya.harga_jual;
+
+    if (hargaBeliBerubah || hargaJualBerubah) {
+      await PriceHistory.create({
+        product_id: productSesudahnya._id,
+        kode_barang: productSesudahnya.kode,
+        harga_beli_lama: productSebelumnya.harga_beli,
+        harga_beli_baru: productSesudahnya.harga_beli,
+        harga_jual_lama: productSebelumnya.harga_jual,
+        harga_jual_baru: productSesudahnya.harga_jual,
+        oleh: dataToUpdate.oleh || 'admin'
+      });
+    }
+
+    // Jangan lupa membuat log aktivitas umum seperti sebelumnya
     await LogBarang.create({
-      kode: updated.kode, // Gunakan updated.kode
-      nama_barang: updated.nama,
+      kode: productSesudahnya.kode,
+      nama_barang: productSesudahnya.nama,
       aksi: 'edit',
-      oleh: data.oleh || 'admin',
+      oleh: dataToUpdate.oleh || 'admin',
       tanggal: new Date()
     });
 
-    res.json(updated);
+    res.json(productSesudahnya);
   } catch (err) {
-    res.status(500).json({ error: 'Gagal update data' });
+    res.status(500).json({ error: 'Gagal update data', detail: err.message });
   }
 });
 

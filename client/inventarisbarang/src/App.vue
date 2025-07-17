@@ -88,6 +88,12 @@
           <v-list-item>
             <v-list-item-title>Profil</v-list-item-title>
           </v-list-item>
+          <v-list-item to="/riwayat-harga" link>
+  <v-list-item-icon>
+    <v-icon>mdi-history</v-icon>
+  </v-list-item-icon>
+  <v-list-item-title>Riwayat Harga</v-list-item-title>
+</v-list-item>
           <v-list-item @click="logout">
             <v-list-item-title>Logout</v-list-item-title>
           </v-list-item>

@@ -155,7 +155,12 @@
                 :color="item.jumlah > 10 ? 'success' : item.jumlah > 5 ? 'warning' : 'error'"
                 size="small"
               >
-                {{ item.jumlah }} {{ item.satuan }}
+                {{ item.jumlah }}
+              </v-chip>
+            </template>
+             <template v-slot:item.satuan="{ item }">
+              <v-chip color="secondary" size="small" variant="outlined">
+                {{ item.satuan }}
               </v-chip>
             </template>
             <template v-slot:item.harga_beli="{ item }">
@@ -223,6 +228,7 @@ export default {
         { title: 'Nama Barang', key: 'nama', width: '200px' },
         { title: 'Kategori', key: 'kategori', width: '150px' },
         { title: 'Stok', key: 'jumlah', width: '120px' },
+        { title: 'Satuan', key: 'satuan', width: '100px' },
         { title: 'Harga Beli', key: 'harga_beli', width: '130px' },
         { title: 'Harga Jual', key: 'harga_jual', width: '130px' },
         { title: 'Aksi', key: 'aksi', sortable: false, width: '100px' }
@@ -257,7 +263,7 @@ export default {
     },
      async fetchSatuan() {
       try {
-        const res = await axios.get('/api/satuans');
+        const res = await axios.get('/api/satuan');
         this.satuanList = res.data;
       } catch (err) {
         console.error('Gagal mengambil data satuan:', err);
