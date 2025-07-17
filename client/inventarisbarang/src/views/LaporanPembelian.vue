@@ -38,7 +38,6 @@
         item-value="_id"
         density="comfortable"
       >
-        <!-- [PERUBAHAN] Menghapus .raw dari semua item di dalam slot -->
         <template v-slot:item.tanggal="{ item }">
           {{ formatDate(item.tanggal) }}
         </template>
@@ -67,7 +66,8 @@
 import axios from 'axios';
 // Impor library PDF
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+// [PERUBAHAN] Impor autoTable sebagai fungsi terpisah
+import autoTable from 'jspdf-autotable';
 
 export default {
   data() {
@@ -112,7 +112,7 @@ export default {
     },
     totalJumlah(items) {
       if (!Array.isArray(items)) return 0;
-      return items.reduce((sum, item) => sum + item.jumlah, 0);
+      return items.reduce((sum, item) => sum + (item.jumlah || 0), 0);
     },
     confirmHapusSemua() {
       if (confirm('Apakah Anda yakin ingin menghapus seluruh riwayat pembelian? Tindakan ini tidak dapat dibatalkan.')) {
@@ -145,29 +145,44 @@ export default {
       }
     },
     exportPDF() {
-      const doc = new jsPDF();
+      try {
+        const doc = new jsPDF();
 
-      doc.text("Laporan Pembelian Barang", 14, 15);
-      doc.setFontSize(10);
-      doc.text(`Periode: ${this.dari || 'Semua'} - ${this.sampai || 'Semua'}`, 14, 22);
+        doc.text("Laporan Pembelian Barang", 14, 15);
+        doc.setFontSize(10);
+        doc.text(`Periode: ${this.dari || 'Semua'} - ${this.sampai || 'Semua'}`, 14, 22);
 
-      const tableColumn = ["Tanggal", "Supplier", "Barang", "Total Jumlah", "Total Harga"];
-      const tableRows = [];
+        const tableColumn = ["Tanggal", "Supplier", "Barang", "Total Jumlah", "Total Harga"];
+        const tableRows = [];
 
-      this.laporan.forEach(item => {
-        const barangList = item.items.map(b => `${b.nama_barang} (${b.jumlah})`).join("\n");
-        const rowData = [
-          this.formatDate(item.tanggal),
-          item.supplier,
-          barangList,
-          this.totalJumlah(item.items),
-          `Rp ${item.total.toLocaleString('id-ID')}`
-        ];
-        tableRows.push(rowData);
-      });
+        this.laporan.forEach(item => {
+          const itemsArray = Array.isArray(item.items) ? item.items : [];
+          const barangList = itemsArray.map(b => `${b.nama_barang || 'N/A'} (${b.jumlah || 0})`).join("\n");
+          const totalHarga = typeof item.total === 'number' ? item.total : 0;
 
-      doc.autoTable(tableColumn, tableRows, { startY: 28 });
-      doc.save('laporan-pembelian.pdf');
+          const rowData = [
+            this.formatDate(item.tanggal),
+            item.supplier || 'N/A',
+            barangList,
+            this.totalJumlah(itemsArray),
+            `Rp ${totalHarga.toLocaleString('id-ID')}`
+          ];
+          tableRows.push(rowData);
+        });
+
+        // [PERUBAHAN] Memanggil autoTable sebagai fungsi
+        autoTable(doc, {
+          head: [tableColumn],
+          body: tableRows,
+          startY: 28,
+        });
+
+        doc.save('laporan-pembelian.pdf');
+
+      } catch (error) {
+        console.error("Gagal membuat PDF:", error);
+        alert("Terjadi kesalahan saat membuat file PDF. Silakan periksa konsol untuk detail.");
+      }
     }
   },
   mounted() {

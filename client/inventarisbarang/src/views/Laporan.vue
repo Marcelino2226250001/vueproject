@@ -1,6 +1,5 @@
 <template>
   <div>
-    <!-- [PERUBAHAN] Menambahkan tombol ekspor -->
     <v-row class="mb-4" align="center">
       <v-col>
         <h2>Laporan Stok Barang</h2>
@@ -13,7 +12,6 @@
       </v-col>
     </v-row>
 
-    <!-- [PERUBAHAN] Menambahkan id pada tabel untuk referensi -->
     <table id="tabel-stok">
       <thead>
         <tr>
@@ -48,9 +46,10 @@
 
 <script>
 import axios from 'axios';
-// [PERUBAHAN] Impor library PDF
+// Impor library PDF
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+// [PERUBAHAN] Impor autoTable sebagai fungsi terpisah
+import autoTable from 'jspdf-autotable';
 
 export default {
   data() {
@@ -84,25 +83,27 @@ export default {
       if (typeof value !== 'number') return value;
       return value.toLocaleString('id-ID');
     },
-    // [PERUBAHAN] Method baru untuk ekspor PDF
     exportPDF() {
-      const doc = new jsPDF();
+      try {
+        const doc = new jsPDF();
 
-      // Menambahkan judul
-      doc.text("Laporan Stok Barang", 14, 15);
-      doc.setFontSize(10);
-      doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 22);
+        doc.text("Laporan Stok Barang", 14, 15);
+        doc.setFontSize(10);
+        doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 22);
 
-      // Menggunakan autoTable untuk membuat tabel dari elemen HTML
-      doc.autoTable({
-        html: '#tabel-stok',
-        startY: 28, // Posisi awal tabel
-        theme: 'grid',
-        headStyles: { fillColor: [41, 128, 185] }, // Warna header
-      });
+        // [PERUBAHAN] Memanggil autoTable sebagai fungsi
+        autoTable(doc, {
+          html: '#tabel-stok',
+          startY: 28,
+          theme: 'grid',
+          headStyles: { fillColor: [41, 128, 185] },
+        });
 
-      // Menyimpan file PDF
-      doc.save('laporan-stok-barang.pdf');
+        doc.save('laporan-stok-barang.pdf');
+      } catch (error) {
+        console.error("Gagal membuat PDF Laporan Stok:", error);
+        alert("Terjadi kesalahan saat membuat file PDF. Silakan periksa konsol.");
+      }
     }
   },
   mounted() {
