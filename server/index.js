@@ -208,18 +208,12 @@ try {
 }
 try {
   const riwayathargaRoutes = require('./routes/riwayathargaRoutes');
-  app.use('/api/riwayatharga', riwayathargaRoutes);
+  app.use('/api/riwayat-harga', riwayathargaRoutes);
   console.log('✓ Riwayat Harga routes loaded');
 } catch (err) {
-  console.error('✗ Error loading Satuan routes:', err.message);
+  console.error('✗ Error loading Riwayat Harga routes:', err.message);
 }
-try {
-  const satuanRoutes = require('./routes/satuanRoutes');
-  app.use('/api/satuan', satuanRoutes);
-  console.log('✓ Satuan routes loaded');
-} catch (err) {
-  console.error('✗ Error loading Satuan routes:', err.message);
-}
+
 // Connect MongoDB
 mongoose.connect(process.env.MONGO_URI, {
 }).then(() => {

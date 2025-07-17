@@ -36,4 +36,4 @@ const priceHistorySchema = new mongoose.Schema({
   timestamps: true // Otomatis menambahkan createdAt dan updatedAt
 });
 
-module.exports = mongoose.model('PriceHistory', priceHistorySchema);
+module.exports = mongoose.model('RiwayatHarga', priceHistorySchema, 'riwayat_harga');
