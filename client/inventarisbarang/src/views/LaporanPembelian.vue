@@ -2,7 +2,6 @@
   <div>
     <h2 class="text-xl font-bold mb-4">Laporan Pembelian</h2>
 
-
     <v-card class="mb-6 pa-4" flat>
       <v-row dense>
         <v-col cols="12" md="3">
@@ -24,12 +23,11 @@
             Ekspor PDF
           </v-btn>
           <v-btn v-if="role !== 'gudang' && role !== 'penerimaan'" color="error" @click="confirmHapusSemua">
-  Bersihkan Riwayat
-</v-btn>
+            Bersihkan Riwayat
+          </v-btn>
         </v-col>
       </v-row>
     </v-card>
-
 
     <v-card flat>
       <v-data-table
@@ -40,10 +38,10 @@
         item-value="_id"
         density="comfortable"
       >
+        <!-- [PERUBAHAN] Menghapus .raw dari semua item di dalam slot -->
         <template v-slot:item.tanggal="{ item }">
           {{ formatDate(item.tanggal) }}
         </template>
-
         <template v-slot:item.barang="{ item }">
           <ul class="pl-4">
             <li v-for="(i, idx) in item.items" :key="idx">
@@ -51,15 +49,12 @@
             </li>
           </ul>
         </template>
-
         <template v-slot:item.jumlah="{ item }">
           {{ totalJumlah(item.items || []) }}
         </template>
-
         <template v-slot:item.total="{ item }">
           Rp {{ (item.total || 0).toLocaleString('id-ID') }}
         </template>
-
         <template v-slot:no-data>
           <div class="text-center text-grey py-4">Tidak ada data pembelian</div>
         </template>
@@ -70,6 +65,9 @@
 
 <script>
 import axios from 'axios';
+// Impor library PDF
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 export default {
   data() {
@@ -123,13 +121,8 @@ export default {
     },
     async hapusSemuaPembelian() {
       try {
-
         const laporanSebelumHapus = [...this.laporan];
-
-
         await axios.delete('/api/pembelian/semua');
-
-
         for (const pembelian of laporanSebelumHapus) {
           if (pembelian.items && Array.isArray(pembelian.items)) {
             for (const item of pembelian.items) {
@@ -144,18 +137,14 @@ export default {
             }
           }
         }
-
-
         this.laporan = [];
         alert('Riwayat pembelian berhasil dihapus dan aktivitas telah dicatat.');
-
       } catch (err) {
         console.error('Gagal menghapus semua pembelian:', err);
         alert('Gagal menghapus riwayat pembelian.');
       }
     },
-
-   exportPDF() {
+    exportPDF() {
       const doc = new jsPDF();
 
       doc.text("Laporan Pembelian Barang", 14, 15);
