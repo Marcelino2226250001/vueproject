@@ -1,7 +1,10 @@
 const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema({
-  kode: String,
+  kode: {
+    type: String,
+    unique: true
+  },
   nama: String,
   kategori: String,
   jumlah: Number,
@@ -13,6 +16,7 @@ const productSchema = new mongoose.Schema({
     default: Date.now
   }
 });
+
 
 module.exports = mongoose.models.Product || mongoose.model('Product', productSchema);
 
