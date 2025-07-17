@@ -208,7 +208,7 @@ try {
 }
 try {
   const riwayathargaRoutes = require('./routes/riwayathargaRoutes');
-  app.use('/api/riwayat-harga', riwayathargaRoutes);
+  app.use('/api/riwayatharga', riwayathargaRoutes);
   console.log('✓ Riwayat Harga routes loaded');
 } catch (err) {
   console.error('✗ Error loading Riwayat Harga routes:', err.message);
