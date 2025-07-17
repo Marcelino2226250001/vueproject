@@ -48,13 +48,16 @@
           />
         </v-col>
         <v-col cols="12" md="3">
-          <v-text-field
-            v-model="form.satuan"
-            label="Satuan"
-            outlined
-            dense
-            required
-          />
+          <v-autocomplete
+  v-model="form.satuan"
+  :items="satuanList"
+  item-title="nama"
+  item-value="nama"
+  label="Pilih Satuan"
+  outlined
+  dense
+  required
+/>
         </v-col>
         <v-col cols="12" md="3">
           <v-text-field
@@ -210,6 +213,7 @@ export default {
         harga_beli: 0,
         harga_jual: 0
       },
+      satuanList: [],
       barangList: [],
       search: '',
       isLoading: false,
@@ -249,6 +253,15 @@ export default {
         this.showAlert('error', 'Gagal mengambil data barang');
       } finally {
         this.isLoadingTable = false;
+      }
+    },
+     async fetchSatuan() {
+      try {
+        const res = await axios.get('/api/satuans');
+        this.satuanList = res.data;
+      } catch (err) {
+        console.error('Gagal mengambil data satuan:', err);
+        this.showAlert('error', 'Gagal memuat daftar satuan');
       }
     },
 
@@ -417,6 +430,7 @@ const payload = {
       this.$router.push('/unauthorized');
     } else {
       this.fetchBarang();
+      this.fetchSatuan();
     }
   }
 };
