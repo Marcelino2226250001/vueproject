@@ -80,24 +80,32 @@ router.post('/', async (req, res) => {
 });
 
 // PUT: Edit barang + log
+// file: routes/productRoutes.js
+
 router.put('/:id', async (req, res) => {
+  console.log('--- [MULAI] PROSES UPDATE BARANG ---');
   try {
     const dataToUpdate = req.body;
 
-    // 1. Ambil data produk saat ini SEBELUM di-update
     const productSebelumnya = await Product.findById(req.params.id);
     if (!productSebelumnya) {
+      console.log('[ERROR] Barang tidak ditemukan dengan ID:', req.params.id);
       return res.status(404).json({ error: 'Barang tidak ditemukan' });
     }
+    console.log('[LOG] Harga Beli Lama:', productSebelumnya.harga_beli);
+    console.log('[LOG] Harga Jual Lama:', productSebelumnya.harga_jual);
 
-    // 2. Lakukan update seperti biasa
     const productSesudahnya = await Product.findByIdAndUpdate(req.params.id, dataToUpdate, { new: true });
+    console.log('[LOG] Harga Beli Baru:', productSesudahnya.harga_beli);
+    console.log('[LOG] Harga Jual Baru:', productSesudahnya.harga_jual);
 
-    // 3. Bandingkan harga lama dan baru. Jika berbeda, buat catatan riwayat.
     const hargaBeliBerubah = productSebelumnya.harga_beli !== productSesudahnya.harga_beli;
     const hargaJualBerubah = productSebelumnya.harga_jual !== productSesudahnya.harga_jual;
+    console.log('[LOG] Apakah Harga Beli Berubah?:', hargaBeliBerubah);
+    console.log('[LOG] Apakah Harga Jual Berubah?:', hargaJualBerubah);
 
     if (hargaBeliBerubah || hargaJualBerubah) {
+      console.log('>>> [KONDISI TERPENUHI] Mencoba menyimpan riwayat harga...');
       await PriceHistory.create({
         product_id: productSesudahnya._id,
         kode_barang: productSesudahnya.kode,
@@ -107,19 +115,17 @@ router.put('/:id', async (req, res) => {
         harga_jual_baru: productSesudahnya.harga_jual,
         oleh: dataToUpdate.oleh || 'admin'
       });
+      console.log('>>> [SUKSES] Riwayat harga berhasil disimpan.');
+    } else {
+      console.log('>>> [KONDISI TIDAK TERPENUHI] Tidak ada perubahan harga, riwayat tidak disimpan.');
     }
 
-    // Jangan lupa membuat log aktivitas umum seperti sebelumnya
-    await LogBarang.create({
-      kode: productSesudahnya.kode,
-      nama_barang: productSesudahnya.nama,
-      aksi: 'edit',
-      oleh: dataToUpdate.oleh || 'admin',
-      tanggal: new Date()
-    });
-
+    await LogBarang.create({ /* ... log aktivitas seperti biasa ... */ });
+    
+    console.log('--- [SELESAI] PROSES UPDATE BARANG ---');
     res.json(productSesudahnya);
   } catch (err) {
+    console.error('--- [ERROR] Gagal total saat update:', err);
     res.status(500).json({ error: 'Gagal update data', detail: err.message });
   }
 });
