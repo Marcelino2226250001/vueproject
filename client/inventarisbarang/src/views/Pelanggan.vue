@@ -20,17 +20,17 @@
       :search="search"
       class="elevation-1 mt-4"
     >
+      <!-- [PERUBAHAN] Menghapus .raw dari item -->
       <template v-slot:item.aksi="{ item }">
-        <v-btn small icon color="primary" class="mr-2" @click="editPelanggan(item.raw)">
+        <v-btn small icon color="primary" class="mr-2" @click="editPelanggan(item)">
           <v-icon>mdi-pencil</v-icon>
         </v-btn>
-        <v-btn small icon color="error" @click="hapusPelanggan(item.raw._id)">
+        <v-btn small icon color="error" @click="hapusPelanggan(item._id)">
           <v-icon>mdi-delete</v-icon>
         </v-btn>
       </template>
     </v-data-table>
 
-    <!-- [PERUBAHAN] Menggunakan v-form untuk validasi -->
     <v-dialog v-model="showForm" max-width="500px" persistent>
       <v-card>
         <v-card-title>{{ pelanggan._id ? 'Edit' : 'Tambah' }} Pelanggan</v-card-title>
@@ -54,7 +54,7 @@
             />
             <v-select
               v-model="pelanggan.jenis"
-              :items="['Tetap']"
+              :items="['Tetap', 'Umum']"
               label="Jenis"
               :rules="rules.jenis"
               required
@@ -88,18 +88,16 @@ export default {
       search: '',
       loggedInUser: JSON.parse(localStorage.getItem('user')) || null,
       headers: [
-        { title: 'Nama', key: 'nama' },
-        { title: 'No. Telp', key: 'no_telp' },
-        { title: 'Email', key: 'email' },
-        { title: 'Aksi', key: 'aksi', sortable: false },
+        { text: 'Nama', value: 'nama' },
+        { text: 'No. Telp', value: 'no_telp' },
+        { text: 'Email', value: 'email' },
+        { text: 'Aksi', value: 'aksi', sortable: false },
       ],
-      // [PERUBAHAN] Menambahkan rules untuk validasi
       rules: {
         nama: [
           v => !!v || 'Nama harus diisi.',
         ],
         email: [
-          // Email tidak wajib diisi, tapi jika diisi, formatnya harus benar
           v => !v || /.+@.+\..+/.test(v) || 'Format E-mail tidak valid.',
         ],
         jenis: [
@@ -109,8 +107,8 @@ export default {
     };
   },
   computed: {
+    // [PERBAIKAN] Mengembalikan seluruh list untuk ditangani oleh v-data-table
     filteredPelanggan() {
-      // Pencarian sudah ditangani oleh v-data-table, ini untuk data awal
       return this.pelangganList;
     }
   },
@@ -124,7 +122,6 @@ export default {
       }
     },
     async simpanPelanggan() {
-      // [PERUBAHAN] Validasi form sebelum submit
       const { valid } = await this.$refs.form.validate();
       if (!valid) {
         alert('Harap periksa kembali data yang Anda masukkan.');
@@ -159,10 +156,12 @@ export default {
       this.showForm = true;
     },
     editPelanggan(data) {
+      // data sekarang adalah objek pelanggan yang benar
       this.pelanggan = { ...data };
       this.showForm = true;
     },
     async hapusPelanggan(id) {
+      // id sekarang adalah _id yang benar
       const pelanggan = this.pelangganList.find(p => p._id === id);
       if (confirm(`Yakin ingin menghapus pelanggan "${pelanggan.nama}"?`)) {
         try {
@@ -187,9 +186,10 @@ export default {
     tutupForm() {
       this.showForm = false;
       this.resetForm();
-      // Reset validasi form
       this.$nextTick(() => {
-        this.$refs.form.resetValidation();
+        if (this.$refs.form) {
+          this.$refs.form.resetValidation();
+        }
       });
     }
   },

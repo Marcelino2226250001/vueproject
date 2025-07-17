@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Pelanggan = require('../models/Pelanggan');
-// [PERUBAHAN] Menggunakan model LogAktivitas yang benar
-const LogAktivitas = require('../models/LogAktivitas');
+// [PERUBAHAN] Kembali menggunakan model LogBarang untuk konsistensi
+const LogBarang = require('../models/LogBarang');
 
 // Fungsi validasi email sederhana
 const isValidEmail = (email) => /.+@.+\..+/.test(email);
@@ -22,7 +22,7 @@ router.post('/', async (req, res) => {
   try {
     const { nama, email, oleh } = req.body;
     
-    // [PERUBAHAN] Validasi di backend
+    // Validasi di backend
     if (!nama) {
       return res.status(400).json({ error: 'Nama pelanggan harus diisi.' });
     }
@@ -33,13 +33,14 @@ router.post('/', async (req, res) => {
     const pelanggan = new Pelanggan(req.body);
     await pelanggan.save();
 
-    // [PERUBAHAN] Mencatat log ke LogAktivitas dengan skema yang benar
-    await LogAktivitas.create({
-      tipe: 'tambah',
-      pengguna: oleh || 'admin',
-      target: 'pelanggan',
-      nama_item: pelanggan.nama,
-      keterangan: `Menambahkan pelanggan baru: ${pelanggan.nama}`
+    // [PERUBAHAN] Mencatat log ke LogBarang sesuai format yang diminta
+    await LogBarang.create({
+      tipe: 'pelanggan',
+      kode: pelanggan.kode || '-', // Pelanggan mungkin tidak memiliki kode
+      nama_barang: pelanggan.nama, // Menggunakan field nama_barang untuk nama pelanggan
+      aksi: 'tambah pelanggan',
+      oleh: oleh || 'admin',
+      tanggal: new Date()
     });
 
     res.status(201).json({ message: 'Pelanggan berhasil ditambahkan' });
@@ -53,7 +54,7 @@ router.put('/:id', async (req, res) => {
   try {
     const { nama, email, oleh } = req.body;
 
-    // [PERUBAHAN] Validasi di backend
+    // Validasi di backend
     if (!nama) {
       return res.status(400).json({ error: 'Nama pelanggan harus diisi.' });
     }
@@ -66,13 +67,14 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Pelanggan tidak ditemukan' });
     }
 
-    // [PERUBAHAN] Mencatat log ke LogAktivitas
-    await LogAktivitas.create({
-      tipe: 'edit',
-      pengguna: oleh || 'admin',
-      target: 'pelanggan',
-      nama_item: pelanggan.nama,
-      keterangan: `Mengubah data pelanggan: ${pelanggan.nama}`
+    // [PERUBAHAN] Mencatat log ke LogBarang
+    await LogBarang.create({
+      tipe: 'pelanggan',
+      kode: pelanggan.kode || '-',
+      nama_barang: pelanggan.nama,
+      aksi: 'ubah pelanggan',
+      oleh: oleh || 'admin',
+      tanggal: new Date()
     });
 
     res.json({ message: 'Pelanggan berhasil diperbarui' });
@@ -87,13 +89,14 @@ router.delete('/:id', async (req, res) => {
     const pelanggan = await Pelanggan.findByIdAndDelete(req.params.id);
 
     if (pelanggan) {
-      // [PERUBAHAN] Mencatat log ke LogAktivitas
-      await LogAktivitas.create({
-        tipe: 'hapus',
-        pengguna: req.body.oleh || 'admin',
-        target: 'pelanggan',
-        nama_item: pelanggan.nama,
-        keterangan: `Menghapus pelanggan: ${pelanggan.nama}`
+      // [PERUBAHAN] Mencatat log ke LogBarang
+      await LogBarang.create({
+        tipe: 'pelanggan',
+        kode: pelanggan.kode || '-',
+        nama_barang: pelanggan.nama,
+        aksi: 'hapus pelanggan',
+        oleh: req.body.oleh || 'admin',
+        tanggal: new Date()
       });
     }
 
