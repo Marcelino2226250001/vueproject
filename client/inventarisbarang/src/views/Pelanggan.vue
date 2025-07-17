@@ -4,47 +4,67 @@
 
     <v-text-field
       v-model="search"
-      label="Cari pelanggan"
+      label="Cari pelanggan (berdasarkan nama atau email)"
       class="mb-4"
+      prepend-inner-icon="mdi-magnify"
+      variant="outlined"
+      dense
+      clearable
     />
 
-    <v-btn color="primary" @click="showForm = true">+ Tambah Pelanggan</v-btn>
+    <v-btn color="primary" @click="tambahPelangganBaru">+ Tambah Pelanggan</v-btn>
 
-    <v-table>
-      <thead>
-        <tr>
-          <th>Nama</th>
-          <th>No. Telp</th>
-          <th>Email</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="p in filteredPelanggan" :key="p._id">
-          <td>{{ p.nama }}</td>
-          <td>{{ p.no_telp }}</td>
-          <td>{{ p.email }}</td>
-          <td>
-            <v-btn small @click="editPelanggan(p)">Edit</v-btn>
-            <v-btn small color="error" @click="hapusPelanggan(p._id)">Hapus</v-btn>
-          </td>
-        </tr>
-      </tbody>
-    </v-table>
+    <v-data-table
+      :headers="headers"
+      :items="filteredPelanggan"
+      :search="search"
+      class="elevation-1 mt-4"
+    >
+      <template v-slot:item.aksi="{ item }">
+        <v-btn small icon color="primary" class="mr-2" @click="editPelanggan(item.raw)">
+          <v-icon>mdi-pencil</v-icon>
+        </v-btn>
+        <v-btn small icon color="error" @click="hapusPelanggan(item.raw._id)">
+          <v-icon>mdi-delete</v-icon>
+        </v-btn>
+      </template>
+    </v-data-table>
 
-
-    <v-dialog v-model="showForm" max-width="500px">
+    <!-- [PERUBAHAN] Menggunakan v-form untuk validasi -->
+    <v-dialog v-model="showForm" max-width="500px" persistent>
       <v-card>
         <v-card-title>{{ pelanggan._id ? 'Edit' : 'Tambah' }} Pelanggan</v-card-title>
         <v-card-text>
-          <v-text-field v-model="pelanggan.nama" label="Nama" />
-          <v-text-field v-model="pelanggan.no_telp" label="No. Telepon" />
-          <v-text-field v-model="pelanggan.email" label="Email" />
-          <v-select v-model="pelanggan.jenis" :items="['Tetap']" label="Jenis" />
+          <v-form ref="form">
+            <v-text-field
+              v-model="pelanggan.nama"
+              label="Nama"
+              :rules="rules.nama"
+              required
+            />
+            <v-text-field
+              v-model="pelanggan.no_telp"
+              label="No. Telepon"
+              type="number"
+            />
+            <v-text-field
+              v-model="pelanggan.email"
+              label="Email"
+              :rules="rules.email"
+            />
+            <v-select
+              v-model="pelanggan.jenis"
+              :items="['Tetap']"
+              label="Jenis"
+              :rules="rules.jenis"
+              required
+            />
+          </v-form>
         </v-card-text>
         <v-card-actions>
-          <v-btn color="success" @click="simpanPelanggan">Simpan</v-btn>
-          <v-btn text @click="showForm = false">Batal</v-btn>
+          <v-spacer></v-spacer>
+          <v-btn text @click="tutupForm">Batal</v-btn>
+          <v-btn color="primary" @click="simpanPelanggan">Simpan</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -66,93 +86,96 @@ export default {
       },
       showForm: false,
       search: '',
-      loggedInUser: JSON.parse(localStorage.getItem('user')) || null
+      loggedInUser: JSON.parse(localStorage.getItem('user')) || null,
+      headers: [
+        { title: 'Nama', key: 'nama' },
+        { title: 'No. Telp', key: 'no_telp' },
+        { title: 'Email', key: 'email' },
+        { title: 'Aksi', key: 'aksi', sortable: false },
+      ],
+      // [PERUBAHAN] Menambahkan rules untuk validasi
+      rules: {
+        nama: [
+          v => !!v || 'Nama harus diisi.',
+        ],
+        email: [
+          // Email tidak wajib diisi, tapi jika diisi, formatnya harus benar
+          v => !v || /.+@.+\..+/.test(v) || 'Format E-mail tidak valid.',
+        ],
+        jenis: [
+          v => !!v || 'Jenis pelanggan harus dipilih.',
+        ],
+      },
     };
   },
   computed: {
     filteredPelanggan() {
-      return this.pelangganList.filter(p =>
-        p.nama.toLowerCase().includes(this.search.toLowerCase()) ||
-        p.email.toLowerCase().includes(this.search.toLowerCase())
-      );
+      // Pencarian sudah ditangani oleh v-data-table, ini untuk data awal
+      return this.pelangganList;
     }
   },
   methods: {
     async getPelanggan() {
-      const res = await axios.get('/api/pelanggan');
-      this.pelangganList = res.data;
+      try {
+        const res = await axios.get('/api/pelanggan');
+        this.pelangganList = res.data;
+      } catch (err) {
+        alert('Gagal memuat data pelanggan.');
+      }
     },
-    simpanPelanggan() {
-  const isEdit = !!this.pelanggan._id;
-  const method = isEdit ? 'put' : 'post';
-  const url = isEdit
-    ? `/api/pelanggan/${this.pelanggan._id}`
-    : '/api/pelanggan';
+    async simpanPelanggan() {
+      // [PERUBAHAN] Validasi form sebelum submit
+      const { valid } = await this.$refs.form.validate();
+      if (!valid) {
+        alert('Harap periksa kembali data yang Anda masukkan.');
+        return;
+      }
 
-  const data = {
-    ...this.pelanggan,
-    oleh: this.loggedInUser?.username || 'admin'
-  };
+      const isEdit = !!this.pelanggan._id;
+      const method = isEdit ? 'put' : 'post';
+      const url = isEdit
+        ? `/api/pelanggan/${this.pelanggan._id}`
+        : '/api/pelanggan';
 
-  axios[method](url, data)
-    .then(() => {
-      const tipeLog = isEdit ? 'edit' : 'tambah';
-      const keterangan = isEdit
-        ? `Mengedit data pelanggan: ${this.pelanggan.nama}`
-        : `Menambahkan pelanggan baru: ${this.pelanggan.nama}`;
+      const data = {
+        ...this.pelanggan,
+        oleh: this.loggedInUser?.username || 'admin'
+      };
 
+      try {
+        await axios[method](url, data);
+        const pesanAksi = isEdit ? 'diperbarui' : 'ditambahkan';
+        alert(`Pelanggan berhasil ${pesanAksi}.`);
 
-      axios.post('/api/log/aktivitas', {
-        tanggal: new Date(),
-        tipe: tipeLog,
-        pengguna: this.loggedInUser?.username || 'admin',
-        target: 'pelanggan',
-        nama_item: this.pelanggan.nama,
-        keterangan
-      });
-
-      this.getPelanggan();
-      this.showForm = false;
+        this.getPelanggan();
+        this.tutupForm();
+      } catch (err) {
+        const errorMessage = err.response?.data?.error || err.message;
+        alert(`Gagal menyimpan pelanggan: ${errorMessage}`);
+      }
+    },
+    tambahPelangganBaru() {
       this.resetForm();
-    })
-    .catch(err => {
-      alert('Gagal menyimpan pelanggan: ' + err.message);
-    });
-},
-
-
+      this.showForm = true;
+    },
     editPelanggan(data) {
       this.pelanggan = { ...data };
       this.showForm = true;
     },
-   hapusPelanggan(id) {
-  const pelanggan = this.pelangganList.find(p => p._id === id);
-  if (confirm('Yakin ingin menghapus pelanggan ini?')) {
-    axios.delete(`/api/pelanggan/${id}`, {
-      data: {
-        oleh: this.loggedInUser?.username || 'admin'
+    async hapusPelanggan(id) {
+      const pelanggan = this.pelangganList.find(p => p._id === id);
+      if (confirm(`Yakin ingin menghapus pelanggan "${pelanggan.nama}"?`)) {
+        try {
+          await axios.delete(`/api/pelanggan/${id}`, {
+            data: { oleh: this.loggedInUser?.username || 'admin' }
+          });
+          alert('Pelanggan berhasil dihapus.');
+          this.getPelanggan();
+        } catch (err) {
+          alert('Gagal menghapus pelanggan: ' + err.message);
+        }
       }
-    })
-    .then(() => {
-
-      axios.post('/api/log/aktivitas', {
-        tanggal: new Date(),
-        tipe: 'hapus',
-        pengguna: this.loggedInUser?.username || 'admin',
-        target: 'pelanggan',
-        nama_item: pelanggan?.nama || 'Tidak diketahui',
-        keterangan: `Menghapus pelanggan: ${pelanggan?.nama || id}`
-      });
-
-      this.getPelanggan();
-    })
-    .catch(err => {
-      alert('Gagal menghapus pelanggan: ' + err.message);
-    });
-  }
-}
-
-,
+    },
     resetForm() {
       this.pelanggan = {
         nama: '',
@@ -160,6 +183,14 @@ export default {
         email: '',
         jenis: 'Tetap'
       };
+    },
+    tutupForm() {
+      this.showForm = false;
+      this.resetForm();
+      // Reset validasi form
+      this.$nextTick(() => {
+        this.$refs.form.resetValidation();
+      });
     }
   },
   mounted() {

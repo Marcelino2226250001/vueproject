@@ -32,7 +32,7 @@ const routes = [
   { path: '/supply', component: Supply },
   { path: '/pelanggan', component: Pelanggan },
   { path: '/dashboard', component: Dashboard },
-  { path: '/riwayat-harga', component: RiwayatHarga },
+  { path: '/riwayatharga', component: RiwayatHarga },
 ]
 
 

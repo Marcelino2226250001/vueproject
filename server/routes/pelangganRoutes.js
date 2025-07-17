@@ -1,68 +1,106 @@
 const express = require('express');
 const router = express.Router();
 const Pelanggan = require('../models/Pelanggan');
-const LogBarang = require('../models/LogBarang');
+// [PERUBAHAN] Menggunakan model LogAktivitas yang benar
+const LogAktivitas = require('../models/LogAktivitas');
 
+// Fungsi validasi email sederhana
+const isValidEmail = (email) => /.+@.+\..+/.test(email);
 
 // GET semua pelanggan
 router.get('/', async (req, res) => {
-  const data = await Pelanggan.find();
-  res.json(data);
+  try {
+    const data = await Pelanggan.find().sort({ nama: 1 });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal mengambil data pelanggan' });
+  }
 });
 
 // POST tambah pelanggan
 router.post('/', async (req, res) => {
-  const pelanggan = new Pelanggan(req.body);
-  await pelanggan.save();
+  try {
+    const { nama, email, oleh } = req.body;
+    
+    // [PERUBAHAN] Validasi di backend
+    if (!nama) {
+      return res.status(400).json({ error: 'Nama pelanggan harus diisi.' });
+    }
+    if (email && !isValidEmail(email)) {
+      return res.status(400).json({ error: 'Format email tidak valid.' });
+    }
 
-  await LogBarang.create({
-    tipe: 'pelanggan',
-    kode: pelanggan.kode || '-', // jika tidak ada kode, beri default '-'
-    nama_barang: pelanggan.nama,
-    aksi: 'tambah pelanggan',
-    oleh: req.body.oleh || 'Tidak Diketahui',
-    tanggal: new Date()
-  });
+    const pelanggan = new Pelanggan(req.body);
+    await pelanggan.save();
 
-  res.json({ message: 'Pelanggan ditambahkan' });
+    // [PERUBAHAN] Mencatat log ke LogAktivitas dengan skema yang benar
+    await LogAktivitas.create({
+      tipe: 'tambah',
+      pengguna: oleh || 'admin',
+      target: 'pelanggan',
+      nama_item: pelanggan.nama,
+      keterangan: `Menambahkan pelanggan baru: ${pelanggan.nama}`
+    });
+
+    res.status(201).json({ message: 'Pelanggan berhasil ditambahkan' });
+  } catch (err) {
+    res.status(500).json({ error: 'Terjadi kesalahan di server' });
+  }
 });
-
 
 // PUT edit pelanggan
 router.put('/:id', async (req, res) => {
-  const pelanggan = await Pelanggan.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  try {
+    const { nama, email, oleh } = req.body;
 
-  await LogBarang.create({
-    tipe: 'pelanggan',
-    kode: pelanggan.kode || '-',
-    nama_barang: pelanggan.nama,
-    aksi: 'ubah pelanggan',
-    oleh: req.body.oleh || 'Tidak Diketahui',
-    tanggal: new Date()
-  });
+    // [PERUBAHAN] Validasi di backend
+    if (!nama) {
+      return res.status(400).json({ error: 'Nama pelanggan harus diisi.' });
+    }
+    if (email && !isValidEmail(email)) {
+      return res.status(400).json({ error: 'Format email tidak valid.' });
+    }
 
-  res.json({ message: 'Pelanggan diperbarui' });
+    const pelanggan = await Pelanggan.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!pelanggan) {
+      return res.status(404).json({ error: 'Pelanggan tidak ditemukan' });
+    }
+
+    // [PERUBAHAN] Mencatat log ke LogAktivitas
+    await LogAktivitas.create({
+      tipe: 'edit',
+      pengguna: oleh || 'admin',
+      target: 'pelanggan',
+      nama_item: pelanggan.nama,
+      keterangan: `Mengubah data pelanggan: ${pelanggan.nama}`
+    });
+
+    res.json({ message: 'Pelanggan berhasil diperbarui' });
+  } catch (err) {
+    res.status(500).json({ error: 'Terjadi kesalahan di server' });
+  }
 });
-
 
 // DELETE pelanggan
 router.delete('/:id', async (req, res) => {
-  const pelanggan = await Pelanggan.findById(req.params.id);
-  await Pelanggan.findByIdAndDelete(req.params.id);
+  try {
+    const pelanggan = await Pelanggan.findByIdAndDelete(req.params.id);
 
-  if (pelanggan) {
-    await LogBarang.create({
-      tipe: 'pelanggan',
-      kode: pelanggan.kode || '-',
-      nama_barang: pelanggan.nama,
-      aksi: 'hapus pelanggan',
-      oleh: req.body.oleh || 'Tidak Diketahui',
-      tanggal: new Date()
-    });
+    if (pelanggan) {
+      // [PERUBAHAN] Mencatat log ke LogAktivitas
+      await LogAktivitas.create({
+        tipe: 'hapus',
+        pengguna: req.body.oleh || 'admin',
+        target: 'pelanggan',
+        nama_item: pelanggan.nama,
+        keterangan: `Menghapus pelanggan: ${pelanggan.nama}`
+      });
+    }
+
+    res.json({ message: 'Pelanggan berhasil dihapus' });
+  } catch (err) {
+    res.status(500).json({ error: 'Terjadi kesalahan di server' });
   }
-
-  res.json({ message: 'Pelanggan dihapus' });
 });
-
 
 module.exports = router;

@@ -58,7 +58,7 @@ export default {
     async fetchPriceHistory() {
       this.isLoading = true;
       try {
-        const res = await axios.get('/api/price-history');
+        const res = await axios.get('/api/riwayatharga');
         this.historyList = res.data;
       } catch (err) {
         console.error('Gagal mengambil riwayat harga:', err);
