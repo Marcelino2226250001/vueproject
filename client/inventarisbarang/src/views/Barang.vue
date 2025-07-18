@@ -54,17 +54,17 @@
           </v-card-text>
         </v-card>
 
-        <!-- [PERUBAHAN] Tabel Data dengan Fitur Pencarian -->
+        <!-- Tabel Data dengan Fitur Pencarian -->
         <v-card>
           <v-card-title>
             <v-row align="center">
-              <v-col cols="12" md="6">
+              <v-col cols="12" md="4">
                 <h3 class="text-h6">Data Barang</h3>
                 <p class="text-caption text-grey-600 mb-0">
                   Total: {{ filteredBarang.length }} barang
                 </p>
               </v-col>
-              <v-col cols="12" md="6">
+              <v-col cols="12" md="5">
                 <v-text-field
                   v-model="search"
                   label="Cari barang (kode, nama, kategori...)"
@@ -74,6 +74,13 @@
                   variant="outlined"
                   clearable
                 />
+              </v-col>
+              <!-- [PERUBAHAN] Tombol untuk membuka dialog manajemen satuan -->
+              <v-col cols="12" md="3" class="text-right">
+                 <v-btn color="secondary" @click="bukaDialogKelolaSatuan">
+                    <v-icon left>mdi-ruler-square</v-icon>
+                    Kelola Satuan
+                  </v-btn>
               </v-col>
             </v-row>
           </v-card-title>
@@ -133,6 +140,52 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- [TAMBAHAN] Dialog untuk Manajemen Satuan (CRUD) -->
+    <v-dialog v-model="dialogKelolaSatuan" max-width="600px">
+        <v-card>
+            <v-card-title>
+                <span class="text-h5">Kelola Satuan</span>
+            </v-card-title>
+            <v-card-text>
+                <v-form @submit.prevent="simpanFormSatuan">
+                    <v-row align="center">
+                        <v-col cols="8">
+                            <v-text-field
+                                v-model="formSatuan.nama"
+                                label="Nama Satuan"
+                                dense
+                                hide-details
+                            ></v-text-field>
+                        </v-col>
+                        <v-col cols="4">
+                            <v-btn type="submit" color="primary">{{ isEditModeSatuan ? 'Update' : 'Tambah' }}</v-btn>
+                        </v-col>
+                    </v-row>
+                </v-form>
+                <v-divider class="my-4"></v-divider>
+                <v-data-table
+                    :headers="headersSatuan"
+                    :items="satuanList"
+                    density="compact"
+                >
+                    <template v-slot:item.aksi="{ item }">
+                        <v-btn icon size="x-small" variant="text" @click="pilihSatuanUntukEdit(item)">
+                            <v-icon color="primary">mdi-pencil</v-icon>
+                        </v-btn>
+                        <v-btn icon size="x-small" variant="text" @click="hapusSatuanCrud(item)">
+                            <v-icon color="error">mdi-delete</v-icon>
+                        </v-btn>
+                    </template>
+                </v-data-table>
+            </v-card-text>
+            <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn color="blue-darken-1" variant="text" @click="tutupDialogKelolaSatuan">Tutup</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
   </v-app>
 </template>
 
@@ -168,12 +221,23 @@ export default {
         { title: 'Harga Jual', key: 'harga_jual', width: '130px' },
         { title: 'Aksi', key: 'aksi', sortable: false, width: '120px' }
       ],
+      // State untuk Quick Add Satuan
       dialogSatuan: false,
       satuanBaru: '',
+      // [TAMBAHAN] State untuk Dialog Manajemen Satuan
+      dialogKelolaSatuan: false,
+      isEditModeSatuan: false,
+      formSatuan: {
+          _id: null,
+          nama: ''
+      },
+      headersSatuan: [
+          { title: 'Nama Satuan', key: 'nama' },
+          { title: 'Aksi', key: 'aksi', sortable: false, align: 'end' }
+      ]
     };
   },
   computed: {
-    // [PERUBAHAN] Logika untuk memfilter barang berdasarkan pencarian
     filteredBarang() {
       if (!this.search) {
         return this.barangList;
@@ -204,7 +268,7 @@ export default {
     },
     async fetchSatuan() {
       try {
-        const res = await axios.get('/api/satuans');
+        const res = await axios.get('/api/satuan');
         this.satuanList = res.data;
       } catch (err) {
         console.error('Gagal mengambil data satuan:', err);
@@ -217,7 +281,7 @@ export default {
         return;
       }
       try {
-        const res = await axios.post('/api/satuans', { nama: this.satuanBaru });
+        const res = await axios.post('/api/satuan', { nama: this.satuanBaru });
         this.showAlert('success', `Satuan "${this.satuanBaru}" berhasil ditambahkan.`);
         this.dialogSatuan = false;
         this.satuanBaru = '';
@@ -239,7 +303,6 @@ export default {
           await axios.put(`/api/products/${this.form._id}`, payload);
           this.showAlert('success', 'Barang berhasil diperbarui');
         } else {
-          // Hapus _id dan kode saat membuat barang baru
           const { _id, kode, ...payload } = { ...this.form, oleh: this.loggedInUser?.username || 'admin' };
           const res = await axios.post('/api/products', payload);
           this.showAlert('success', `Barang berhasil ditambahkan dengan kode: ${res.data.kode}`);
@@ -297,7 +360,7 @@ export default {
         this.showAlert('error', 'Kategori barang harus diisi');
         return false;
       }
-      if (!this.form.satuan) { // Cek apakah satuan dipilih
+      if (!this.form.satuan) {
         this.showAlert('error', 'Satuan barang harus dipilih');
         return false;
       }
@@ -321,6 +384,51 @@ export default {
     formatRupiah(value) {
       if (typeof value !== 'number' || isNaN(value)) return '0';
       return new Intl.NumberFormat('id-ID').format(value);
+    },
+    // [TAMBAHAN] Methods untuk Manajemen Satuan
+    bukaDialogKelolaSatuan() {
+        this.dialogKelolaSatuan = true;
+    },
+    tutupDialogKelolaSatuan() {
+        this.dialogKelolaSatuan = false;
+        this.isEditModeSatuan = false;
+        this.formSatuan = { _id: null, nama: '' };
+    },
+    pilihSatuanUntukEdit(satuan) {
+        this.isEditModeSatuan = true;
+        this.formSatuan = { ...satuan };
+    },
+    async simpanFormSatuan() {
+        if (!this.formSatuan.nama || !this.formSatuan.nama.trim()) {
+            this.showAlert('error', 'Nama satuan tidak boleh kosong.');
+            return;
+        }
+        try {
+            if (this.isEditModeSatuan) {
+                await axios.put(`/api/satuan/${this.formSatuan._id}`, { nama: this.formSatuan.nama });
+                this.showAlert('success', 'Satuan berhasil diperbarui.');
+            } else {
+                await axios.post('/api/satuan', { nama: this.formSatuan.nama });
+                this.showAlert('success', 'Satuan berhasil ditambahkan.');
+            }
+            this.fetchSatuan();
+            this.isEditModeSatuan = false;
+            this.formSatuan = { _id: null, nama: '' };
+        } catch (error) {
+            const errorMessage = error.response?.data?.error || 'Gagal menyimpan satuan.';
+            this.showAlert('error', errorMessage);
+        }
+    },
+    async hapusSatuanCrud(satuan) {
+        if (confirm(`Yakin ingin menghapus satuan "${satuan.nama}"?`)) {
+            try {
+                await axios.delete(`/api/satuan/${satuan._id}`);
+                this.showAlert('success', 'Satuan berhasil dihapus.');
+                this.fetchSatuan();
+            } catch (error) {
+                this.showAlert('error', 'Gagal menghapus satuan.');
+            }
+        }
     }
   },
   mounted() {
