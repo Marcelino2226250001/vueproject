@@ -8,8 +8,27 @@
           <v-card-text>
             <v-form @submit.prevent="submitForm">
               <v-row dense>
+                <!-- [PERUBAHAN] Mengubah input Nama Barang menjadi Autocomplete -->
                 <v-col cols="12" md="3">
-                  <v-text-field v-model="form.nama" label="Nama Barang" outlined dense required />
+                  <v-autocomplete
+                    v-model="form.nama"
+                    :items="barangList"
+                    item-title="nama"
+                    item-value="nama"
+                    label="Cari atau Masukkan Nama Barang"
+                    outlined
+                    dense
+                    required
+                    @update:modelValue="onNamaBarangChange"
+                  >
+                    <template v-slot:no-data>
+                      <v-list-item>
+                        <v-list-item-title>
+                          Ketik untuk menambahkan barang baru
+                        </v-list-item-title>
+                      </v-list-item>
+                    </template>
+                  </v-autocomplete>
                 </v-col>
                 <v-col cols="12" md="3">
                   <v-text-field v-model="form.kategori" label="Kategori" outlined dense required />
@@ -64,7 +83,6 @@
                   Total: {{ filteredBarang.length }} barang
                 </p>
               </v-col>
-              <!-- [FITUR PENCARIAN] Kolom input untuk mencari data barang -->
               <v-col cols="12" md="5">
                 <v-text-field
                   v-model="search"
@@ -236,7 +254,6 @@ export default {
     };
   },
   computed: {
-    // [FITUR PENCARIAN] Logika untuk memfilter barang berdasarkan input pencarian (kode, nama, kategori)
     filteredBarang() {
       if (!this.search) {
         return this.barangList;
@@ -267,7 +284,7 @@ export default {
     },
     async fetchSatuan() {
       try {
-        const res = await axios.get('/api/satuan');
+        const res = await axios.get('/api/satuans');
         this.satuanList = res.data;
       } catch (err) {
         console.error('Gagal mengambil data satuan:', err);
@@ -280,7 +297,7 @@ export default {
         return;
       }
       try {
-        const res = await axios.post('/api/satuan', { nama: this.satuanBaru });
+        const res = await axios.post('/api/satuans', { nama: this.satuanBaru });
         this.showAlert('success', `Satuan "${this.satuanBaru}" berhasil ditambahkan.`);
         this.dialogSatuan = false;
         this.satuanBaru = '';
@@ -350,8 +367,24 @@ export default {
         harga_jual: 0
       };
     },
+    // [TAMBAHAN] Method untuk menangani perubahan pada autocomplete nama barang
+    onNamaBarangChange(nama) {
+      const existingBarang = this.barangList.find(b => b.nama === nama);
+      if (existingBarang) {
+        // Jika barang sudah ada, isi form untuk mode edit
+        this.isiFormEdit(existingBarang);
+      } else {
+        // Jika ini nama baru dan kita sedang dalam mode edit, reset form
+        // agar tidak mengirim ID lama, tapi pertahankan nama yang baru diketik
+        if (this.form._id) {
+          const currentName = this.form.nama;
+          this.resetForm();
+          this.form.nama = currentName;
+        }
+      }
+    },
     validateForm() {
-      if (!this.form.nama.trim()) {
+      if (!this.form.nama || !this.form.nama.trim()) {
         this.showAlert('error', 'Nama barang harus diisi');
         return false;
       }
@@ -403,10 +436,10 @@ export default {
         }
         try {
             if (this.isEditModeSatuan) {
-                await axios.put(`/api/satuan/${this.formSatuan._id}`, { nama: this.formSatuan.nama });
+                await axios.put(`/api/satuans/${this.formSatuan._id}`, { nama: this.formSatuan.nama });
                 this.showAlert('success', 'Satuan berhasil diperbarui.');
             } else {
-                await axios.post('/api/satuan', { nama: this.formSatuan.nama });
+                await axios.post('/api/satuans', { nama: this.formSatuan.nama });
                 this.showAlert('success', 'Satuan berhasil ditambahkan.');
             }
             this.fetchSatuan();
@@ -420,7 +453,7 @@ export default {
     async hapusSatuanCrud(satuan) {
         if (confirm(`Yakin ingin menghapus satuan "${satuan.nama}"?`)) {
             try {
-                await axios.delete(`/api/satuan/${satuan._id}`);
+                await axios.delete(`/api/satuans/${satuan._id}`);
                 this.showAlert('success', 'Satuan berhasil dihapus.');
                 this.fetchSatuan();
             } catch (error) {
