@@ -69,12 +69,6 @@
         <v-list-item to="/laporan/pembelian" link v-if="canAccess('/laporan/pembelian')" prepend-icon="mdi-file-document-outline">
           <v-list-item-title>Laporan Pembelian</v-list-item-title>
         </v-list-item>
-
-
-
-        <v-list-item @click="logout" prepend-icon="mdi-logout">
-          <v-list-item-title>Logout</v-list-item-title>
-        </v-list-item>
       </v-list>
     </v-navigation-drawer>
 
@@ -89,10 +83,6 @@
           </v-btn>
         </template>
         <v-list>
-          <v-list-item>
-            <v-list-item-title>Profil</v-list-item-title>
-          </v-list-item>
-
           <v-list-item @click="logout">
             <v-list-item-title>Logout</v-list-item-title>
           </v-list-item>

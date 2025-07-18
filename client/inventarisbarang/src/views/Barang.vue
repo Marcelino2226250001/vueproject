@@ -10,16 +10,6 @@
       <v-row dense>
         <v-col cols="12" md="3">
           <v-text-field
-            v-model="form.kode"
-            label="Kode Barang (otomatis)"
-            outlined
-            dense
-            readonly
-            placeholder="Akan di-generate otomatis"
-          />
-        </v-col>
-        <v-col cols="12" md="3">
-          <v-text-field
             v-model="form.nama"
             label="Nama Barang"
             outlined
@@ -274,10 +264,6 @@ export default {
     async submitForm() {
   // Validasi form
   if (!this.validateForm()) {
-    if (!this.form.kode.trim()) {
-  this.showAlert('error', 'Kode barang harus diisi');
-  return false;
-}
     return;
   }
 
