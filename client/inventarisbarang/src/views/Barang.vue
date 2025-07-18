@@ -284,7 +284,7 @@ export default {
     },
     async fetchSatuan() {
       try {
-        const res = await axios.get('/api/satuans');
+        const res = await axios.get('/api/satuan');
         this.satuanList = res.data;
       } catch (err) {
         console.error('Gagal mengambil data satuan:', err);
@@ -297,7 +297,7 @@ export default {
         return;
       }
       try {
-        const res = await axios.post('/api/satuans', { nama: this.satuanBaru });
+        const res = await axios.post('/api/satuan', { nama: this.satuanBaru });
         this.showAlert('success', `Satuan "${this.satuanBaru}" berhasil ditambahkan.`);
         this.dialogSatuan = false;
         this.satuanBaru = '';
@@ -436,10 +436,10 @@ export default {
         }
         try {
             if (this.isEditModeSatuan) {
-                await axios.put(`/api/satuans/${this.formSatuan._id}`, { nama: this.formSatuan.nama });
+                await axios.put(`/api/satuan/${this.formSatuan._id}`, { nama: this.formSatuan.nama });
                 this.showAlert('success', 'Satuan berhasil diperbarui.');
             } else {
-                await axios.post('/api/satuans', { nama: this.formSatuan.nama });
+                await axios.post('/api/satuan', { nama: this.formSatuan.nama });
                 this.showAlert('success', 'Satuan berhasil ditambahkan.');
             }
             this.fetchSatuan();
@@ -453,7 +453,7 @@ export default {
     async hapusSatuanCrud(satuan) {
         if (confirm(`Yakin ingin menghapus satuan "${satuan.nama}"?`)) {
             try {
-                await axios.delete(`/api/satuans/${satuan._id}`);
+                await axios.delete(`/api/satuan/${satuan._id}`);
                 this.showAlert('success', 'Satuan berhasil dihapus.');
                 this.fetchSatuan();
             } catch (error) {
