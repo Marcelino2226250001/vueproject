@@ -64,6 +64,7 @@
                   Total: {{ filteredBarang.length }} barang
                 </p>
               </v-col>
+              <!-- [FITUR PENCARIAN] Kolom input untuk mencari data barang -->
               <v-col cols="12" md="5">
                 <v-text-field
                   v-model="search"
@@ -75,7 +76,6 @@
                   clearable
                 />
               </v-col>
-              <!-- [PERUBAHAN] Tombol untuk membuka dialog manajemen satuan -->
               <v-col cols="12" md="3" class="text-right">
                  <v-btn color="secondary" @click="bukaDialogKelolaSatuan">
                     <v-icon left>mdi-ruler-square</v-icon>
@@ -141,7 +141,7 @@
       </v-card>
     </v-dialog>
 
-    <!-- [TAMBAHAN] Dialog untuk Manajemen Satuan (CRUD) -->
+    <!-- Dialog untuk Manajemen Satuan (CRUD) -->
     <v-dialog v-model="dialogKelolaSatuan" max-width="600px">
         <v-card>
             <v-card-title>
@@ -221,10 +221,8 @@ export default {
         { title: 'Harga Jual', key: 'harga_jual', width: '130px' },
         { title: 'Aksi', key: 'aksi', sortable: false, width: '120px' }
       ],
-      // State untuk Quick Add Satuan
       dialogSatuan: false,
       satuanBaru: '',
-      // [TAMBAHAN] State untuk Dialog Manajemen Satuan
       dialogKelolaSatuan: false,
       isEditModeSatuan: false,
       formSatuan: {
@@ -238,6 +236,7 @@ export default {
     };
   },
   computed: {
+    // [FITUR PENCARIAN] Logika untuk memfilter barang berdasarkan input pencarian (kode, nama, kategori)
     filteredBarang() {
       if (!this.search) {
         return this.barangList;
@@ -385,7 +384,6 @@ export default {
       if (typeof value !== 'number' || isNaN(value)) return '0';
       return new Intl.NumberFormat('id-ID').format(value);
     },
-    // [TAMBAHAN] Methods untuk Manajemen Satuan
     bukaDialogKelolaSatuan() {
         this.dialogKelolaSatuan = true;
     },
